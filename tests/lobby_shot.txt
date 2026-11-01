@@ -1,0 +1,3 @@
+# The players screen with the P1 input toggle (screenshot autotest_lobby.png taken by the lobby phase)
+chars Fox Fox
+quit

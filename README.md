@@ -1,18 +1,21 @@
 # SplitBonk — Megabonk local splitscreen
 
-> **V1.0.1 Alpha** (mod version `1.0.1-alpha`). Developed by Claude (Anthropic's AI): all the code, investigation and
+> **V1.0.2 Alpha** (mod version `1.0.2-alpha`). Developed by Claude (Anthropic's AI): all the code, investigation and
 > tests. Playtesting and direction by TheSplitScreenGuy.
 >
 > SplitBonk is an unofficial fan mod, not affiliated with or endorsed by the developers of Megabonk. It contains no
 > game code or assets; you need your own copy of the game.
 
-A BepInEx mod that adds 2-player local splitscreen to Megabonk: same PC (or Steam Deck), two controllers.
+A BepInEx mod that adds 2-player local splitscreen to Megabonk: same PC (or Steam Deck), two controllers, or keyboard and mouse for player 1 and a controller for player 2.
 Player 2 has their own character, weapons, tomes, items, gold, XP, health and camera, and the run only ends when
 both players are down.
 
 ## Features
 - **Joining:** after Play on the main menu, a PLAYERS screen opens. Player 2 presses Start on a second controller
   to join (B to leave), then CONFIRM.
+- **Player 1 on keyboard and mouse:** click the button under PLAYER 1 to switch between CONTROLLER and
+  KEYBOARD + MOUSE (remembered). With keyboard + mouse, every controller is free for player 2, so one controller is
+  enough.
 - **Character select:** each player has their own half of the screen, character pick and skin. P2 starts on P1's
   pick, and P2's skin row lists the skins your save can use.
 - **Cameras:**
@@ -49,13 +52,13 @@ Reading leaderboards still works. Remove the mod to get uploads back.
 
 ## Requirements
 - Megabonk (Steam, Windows version; on Steam Deck / Linux through Proton)
-- Two controllers. On Steam Deck, player 1 can use the Deck's own controls or a controller (Bluetooth or USB);
+- Two controllers, or keyboard and mouse for player 1 plus one controller for player 2. On Steam Deck, player 1 can use the Deck's own controls or a controller (Bluetooth or USB);
   player 2 needs a controller of their own.
 - BepInEx 6 bleeding edge, IL2CPP x64 (tested with `6.0.0-be.788`). The release zip includes it.
 
 ## Install (release zip)
 1. Find your Megabonk folder: in Steam, right-click Megabonk > Manage > Browse local files.
-2. Extract everything in `SplitBonk-V1.0.1-Alpha.zip` into that folder, so that `winhttp.dll` sits next to
+2. Extract everything in `SplitBonk-V1.0.2-Alpha.zip` into that folder, so that `winhttp.dll` sits next to
    `Megabonk.exe`.
 3. Start Megabonk from Steam as usual. The first start takes a minute or two longer while BepInEx prepares itself.
 
@@ -135,7 +138,7 @@ the game assumed a single player.
 .NET 8 SDK. `dotnet build src/MegabonkSplitscreen -c Release`, then `tools/install.ps1` (game must be closed).
 The project compiles against the DLLs in the game's `BepInEx` folder (`GameDir` in the .csproj).
 
-- `tools/make_release.ps1` builds the release zip (`dist/SplitBonk-V1.0.1-Alpha.zip`). Its README comes from
+- `tools/make_release.ps1` builds the release zip (`dist/SplitBonk-V1.0.2-Alpha.zip`). Its README comes from
   `release/README.txt`.
 - `tools/autotest.ps1 tests/<name>.txt` runs a scripted test game that drives both players. `tests/` has the scripts,
   for example `perf_6min.txt` for a 6-minute performance run.

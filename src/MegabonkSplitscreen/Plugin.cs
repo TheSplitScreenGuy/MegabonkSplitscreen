@@ -9,8 +9,8 @@ public class Plugin : BasePlugin
 {
     public const string Guid = "thesplitscreenguy.megabonksplitscreen";
     public const string Name = "MegabonkSplitscreen";
-    public const string Version = "1.0.1-alpha";
-    public const string ReleaseName = "SplitBonk V1.0.1 Alpha";   // the menu label, the README title, the release zip's name
+    public const string Version = "1.0.2-alpha";
+    public const string ReleaseName = "SplitBonk V1.0.2 Alpha";   // the menu label, the README title, the release zip's name
 
     private static Harmony hooks;
     private static BepInEx.Configuration.ConfigFile config;
@@ -35,6 +35,7 @@ public class Plugin : BasePlugin
         ModLog.DebugLogging = Config.Bind("Debug", "DebugLogging", false,
             "Write the mod's diagnostic log lines and UI dump files (for bug hunting; costs a little speed). Errors, warnings and the main events are always logged.").Value;
         P2Camera.Configure(Config);
+        PlayerJoin.Configure(Config);
         Billboards.Init();
         FallDamage.Init();
         AddComponent<Ticker>();

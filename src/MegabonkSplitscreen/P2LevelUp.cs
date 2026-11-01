@@ -276,6 +276,9 @@ internal static class P2LevelUp
 
     // ---------- Controls ----------
 
+    // P2's pad is on the game's player right now (P2's level-up / pause menu)
+    public static bool ControlsWithP2 => swapped;
+
     internal static void GiveControlsToP2()
     {
         var joy = PlayerJoin.P2Joystick;

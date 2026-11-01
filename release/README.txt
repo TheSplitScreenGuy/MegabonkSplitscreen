@@ -2,7 +2,7 @@
 ====================
 MegabonkSplitscreen mod version {VERSION}
 
-Local two-player splitscreen for Megabonk (same PC, two controllers). Player 2 has their own character, weapons, tomes,
+Local two-player splitscreen for Megabonk (same PC; two controllers, or keyboard and mouse for player 1). Player 2 has their own character, weapons, tomes,
 items, gold, health and camera, and the run only ends when both players are down.
 
 SplitBonk is an unofficial fan mod, not affiliated with or endorsed by the developers of Megabonk. It contains no game
@@ -39,6 +39,8 @@ Player 1 can use the Deck's own controls or a controller (Bluetooth or USB); pla
 Playing
 -------
 - Two controllers: player 1 uses the first one, player 2 the second.
+- Player 1 on keyboard and mouse: on the PLAYERS screen, click the button under PLAYER 1 (CONTROLLER / KEYBOARD +
+  MOUSE). Then any controller's Start joins as player 2 - one controller is enough. The choice is remembered.
 - After Play on the main menu, the PLAYERS screen opens: player 2 presses Start to join (B to leave), then CONFIRM.
 - Each player picks a character; player 2 starts on player 1's pick.
 - Pause menu > CAMERA: SPLIT (always two views) or DYNAMIC (one view while you're close together). Remembered.

@@ -66,6 +66,20 @@ damage from mobs. User: test every character and every projectile weapon; player
 - User committed the fixes (22a6c37). Then: version 1.0.1-alpha, "SplitBonk V1.0.1 Alpha"; dist\SplitBonk-V1.0.1-Alpha.zip
   made by make_release.ps1 (231 files, 0 backslash names, BepInEx/config/BepInEx.cfg console off, DLL = the build;
   zip SHA256 D5C604A2...CF34509); the 1.0 zip moved to dist\old. Same DLL installed in the game.
+- FEATURE (player request: "1 person on mouse and keyboard, the other on the controller"; user: a toggle on the players
+  screen): P1 input CONTROLLER / KEYBOARD + MOUSE, a button under the PLAYER 1 card (Lobby.cs), saved as
+  [Players] Player1KeyboardMouse in thesplitscreenguy.megabonksplitscreen.cfg. Keyboard + mouse: P1 = keyboard (p1Id -1,
+  no pad is P1's), every controller is taken off Rewired player 0 (also ones plugged in later - checked when the pad
+  count changes, not while P2's level-up/pause menu has the controls), so any pad's Start joins as P2 - one controller
+  is enough; P2 leaving keeps the pad free. Back to CONTROLLER: the pads (not P2's) go back to player 0, P1 = the next
+  pad to press. Why it was needed (user's log): P1 was always a pad - clicking Play with the mouse left P1 "not known",
+  and the only pad then became P1. Autotests ignore the setting (keyboard/mouse are off in autotests). Layout checked
+  (autotest_lobby.png). First user test: the keyboard did nothing - the game's player had hasKeyboard AND hasMouse
+  false (log before P2's level-up swap: "keyboard False, mouse False"); the game switches them off while it thinks a
+  controller is in use. Fix: in keyboard + mouse mode PlayerJoin.KeepPadsOffP1 keeps them on every frame (not while
+  P2's menu has the controls). User: "excellent" - works.
+- RELEASE 1.0.2-alpha ("SplitBonk V1.0.2 Alpha"): the P1 keyboard + mouse toggle; dist\SplitBonk-V1.0.2-Alpha.zip by
+  make_release.ps1 (231 files, 0 backslash names, console-off cfg, DLL = the build); 1.0.1 zip moved to dist\old.
 - BepInEx console came back on the user's PC (BepInEx.cfg [Logging.Console] Enabled = true - BepInEx's default when it
   makes a new config). The 1.0 alpha zip shipped NO BepInEx.cfg, so every player started with the console on (and
   Steam Input could then hide P2's pad). Fixed for the next release: release\BepInEx.cfg (only the console setting,

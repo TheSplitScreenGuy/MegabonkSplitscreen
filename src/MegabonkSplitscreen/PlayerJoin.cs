@@ -62,6 +62,18 @@ internal static class PlayerJoin
         // 10 s: the camera flies to character select first (3 s was too short in v0.22.4 -> fallback used)
         if (lastPressedJoy != null && Time.unscaledTime - lastPressedAt < 10f) c = lastPressedJoy;
         ModLog.Info($"Last pad pressed outside character select: {Describe(lastPressedJoy)} {(lastPressedJoy != null ? $"{Time.unscaledTime - lastPressedAt:F1} s ago" : "")}");
+        // 1.0.1 (player request; user: a toggle on the players screen): P1 set to keyboard + mouse -> every pad is free to
+        // join as P2 (none of them is P1's)
+        if (P1KeyboardMouse)
+        {
+            SetP1KeyboardMouse("the players screen's P1 input setting");
+            LogRewiredState();
+            PadBindings.LogPadsOnce();
+            CharacterSelectView.OnMenuOpened();
+            P2Select.OnCharacterSelectOpened();
+            Lobby.OnCharacterSelectOpened(__instance);
+            return;
+        }
         // No pad seen pressing Play (user: first visit after launch, the Steam Controller's Play press wasn't seen and
         // the game's current controller was the Xbox pad, so the Xbox pad became P1): P1 stays undecided until a pad
         // presses something here (see DecideP1)
@@ -82,6 +94,96 @@ internal static class PlayerJoin
     private static float lastPressedAt;
     private static readonly Dictionary<int, int> menuPrevIndex = new();
     private static int menuPressLogs;
+
+    // ---------- P1's input: controller or keyboard + mouse (players screen toggle, saved in the config) ----------
+    private static BepInEx.Configuration.ConfigEntry<bool> p1KbmSetting;
+    public static void Configure(BepInEx.Configuration.ConfigFile config)
+    {
+        p1KbmSetting = config.Bind("Players", "Player1KeyboardMouse", false,
+            "Player 1 plays with keyboard and mouse (every controller is then free for player 2). Also switched on the players screen.");
+    }
+
+    public static bool P1KeyboardMouse => p1KbmSetting != null && p1KbmSetting.Value && !Autotest.Active;
+
+    // The players screen's toggle
+    public static void SetP1Input(bool keyboardMouse)
+    {
+        if (p1KbmSetting == null) return;
+        p1KbmSetting.Value = keyboardMouse;   // saved by BepInEx
+        if (keyboardMouse) SetP1KeyboardMouse("switched on the players screen");
+        else
+        {
+            // Back to a controller: the pads that aren't P2's go back to the game's player; P1 = the next pad to press
+            // something (if P2 hasn't joined yet)
+            GivePadsToP1();
+            p1Known = false;
+            ModLog.Info("Players screen: Player 1 uses a controller again (the first pad to press a button, if P2 hasn't joined)");
+        }
+    }
+
+    private static void SetP1KeyboardMouse(string why)
+    {
+        p1Known = true;
+        p1Type = ControllerType.Keyboard;
+        p1Id = -1;   // no joystick matches: every pad can join as P2
+        int n = TakePadsFromP1();
+        ModLog.Info($"Player 1 is using keyboard and mouse ({why}); {n} controller(s) taken off the game's player - any controller's Start joins as player 2");
+    }
+
+    // Keyboard + mouse: no controller drives the game's player (P1), so P1's menus and character only follow the
+    // keyboard and mouse. Returns how many were taken off.
+    private static int TakePadsFromP1()
+    {
+        int n = 0;
+        try
+        {
+            var p0 = ReInput.players.GetPlayer(0);
+            foreach (var j in ReInput.controllers.GetJoysticks())
+                if (j != null && p0.controllers.ContainsController(j)) { p0.controllers.RemoveController(j); n++; }
+        }
+        catch (Exception e) { ModLog.Warn($"P1 keyboard+mouse: taking the controllers off failed: {e.Message}"); }
+        return n;
+    }
+
+    private static void GivePadsToP1()
+    {
+        try
+        {
+            var p0 = ReInput.players.GetPlayer(0);
+            foreach (var j in ReInput.controllers.GetJoysticks())
+                if (j != null && (P2Joystick == null || j.id != P2Joystick.id) && !p0.controllers.ContainsController(j)) p0.controllers.AddController(j, false);
+        }
+        catch (Exception e) { ModLog.Warn($"P1 controller: giving the controllers back failed: {e.Message}"); }
+    }
+
+    // Keyboard + mouse: a controller plugged in later is assigned to the game's player by Rewired - taken off again
+    // (checked when the number of controllers changes; P2's level-up/pause menus put P2's pad on the game's player on
+    // purpose, so not while one of them has the controls)
+    private static int lastJoyCount = -1;
+    private static int kbmOnLogs;
+    private static void KeepPadsOffP1()
+    {
+        if (!P1KeyboardMouse || P2LevelUp.ControlsWithP2) { lastJoyCount = -1; return; }
+        // User's test: the keyboard did nothing - the game's player had keyboard AND mouse switched off
+        // (log: "Controls -> P1: ... keyboard False, mouse False" before P2's level-up even touched them). The game
+        // seems to switch them off while it thinks a controller is in use; in keyboard + mouse mode they stay on.
+        try
+        {
+            var c0 = ReInput.players.GetPlayer(0).controllers;
+            if (!c0.hasKeyboard || !c0.hasMouse)
+            {
+                if (kbmOnLogs++ < 10) ModLog.Info($"P1 keyboard + mouse: the game's player had keyboard {c0.hasKeyboard}, mouse {c0.hasMouse} - switched on");
+                c0.hasKeyboard = true;
+                c0.hasMouse = true;
+            }
+        }
+        catch (Exception e) { if (kbmOnLogs++ < 10) ModLog.Warn($"P1 keyboard + mouse: switching them on failed: {e.Message}"); }
+        int count = ReInput.controllers.joystickCount;
+        if (count == lastJoyCount) return;
+        lastJoyCount = count;
+        int n = TakePadsFromP1();
+        if (n > 0) ModLog.Info($"Player 1 on keyboard and mouse: {n} newly connected controller(s) taken off the game's player");
+    }
 
     private static void TrackLastPressed()
     {
@@ -182,6 +284,7 @@ internal static class PlayerJoin
     public static void Update()
     {
         if (!InCharacterSelect && P2Joystick == null && ReInput.isReady) TrackLastPressed();
+        if (ReInput.isReady) KeepPadsOffP1();
         if (!InCharacterSelect || P2Joystick != null || !ReInput.isReady) return;
 
         foreach (var joy in ReInput.controllers.GetJoysticks())
@@ -284,7 +387,8 @@ internal static class PlayerJoin
             try
             {
                 if (ReInput.players.playerCount > 1) ReInput.players.GetPlayer(1).controllers.RemoveController(joy);
-                ReInput.players.GetPlayer(0).controllers.AddController(joy, false);
+                // P1 on keyboard + mouse: the pad stays free (it would drive P1 otherwise)
+                if (!P1KeyboardMouse) ReInput.players.GetPlayer(0).controllers.AddController(joy, false);
             }
             catch (Exception e) { ModLog.Warn($"P2 leave: giving the pad back failed: {e.Message}"); }
         }

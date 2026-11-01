@@ -200,6 +200,21 @@ internal static class Lobby
             cards[i] = card;
         }
 
+        // P1's input toggle under P1's card (1.0.1, player request + user: keyboard/mouse or controller for P1)
+        var tgo = new GameObject("P1 Input");
+        tgo.transform.SetParent(root.transform, false);
+        var trt = tgo.AddComponent<RectTransform>();
+        trt.anchorMin = trt.anchorMax = new Vector2(0.5f, 0f);
+        trt.pivot = new Vector2(0.5f, 0.5f);
+        trt.sizeDelta = new Vector2(cardW, 56f);
+        trt.anchoredPosition = new Vector2(-total / 2f + cardW / 2f, 260f - cardH / 2f - 40f);
+        var timg = tgo.AddComponent<Image>();
+        timg.color = new Color(PlayerColors[0].r * 0.25f, PlayerColors[0].g * 0.25f, PlayerColors[0].b * 0.25f, 0.95f);
+        var tbtn = tgo.AddComponent<Button>();
+        tbtn.targetGraphic = timg;
+        tbtn.onClick.AddListener((UnityEngine.Events.UnityAction)(() => ToggleP1Input()));
+        inputLabel = Text("Label", tgo.transform, "", 26f, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(cardW, 56f), Color.white);
+
         // Confirm, in the middle near the bottom
         var cgo = new GameObject("Confirm");
         cgo.transform.SetParent(root.transform, false);
@@ -218,9 +233,21 @@ internal static class Lobby
         ModLog.Info("[lobby] screen built");
     }
 
+    private static TextMeshProUGUI inputLabel;
+
+    private static void ToggleP1Input()
+    {
+        bool kbm = !PlayerJoin.P1KeyboardMouse;
+        PlayerJoin.SetP1Input(kbm);
+        ModLog.Info($"[lobby] P1 input switched to {(kbm ? "keyboard + mouse" : "controller")}");
+        Refresh();
+    }
+
     private static void Refresh()
     {
         if (cards[0] == null) return;
+        bool kbm = PlayerJoin.P1KeyboardMouse;
+        if (inputLabel != null) inputLabel.text = kbm ? "P1: KEYBOARD + MOUSE  (click)" : "P1: CONTROLLER  (click)";
         for (int i = 0; i < MaxPlayers; i++)
         {
             bool joined = i == 0 || (i == 1 && PlayerJoin.HasP2);
@@ -228,7 +255,7 @@ internal static class Lobby
             var c = cards[i];
             c.bg.color = joined ? new Color(PlayerColors[i].r * 0.35f, PlayerColors[i].g * 0.35f, PlayerColors[i].b * 0.35f, 0.9f) : new Color(0f, 0f, 0f, 0.55f);
             c.title.color = comingLater ? new Color(1f, 1f, 1f, 0.3f) : PlayerColors[i];
-            c.status.text = i == 0 ? "READY" : joined ? "JOINED  (B to leave)" : comingLater ? "coming later" : "press START to join";
+            c.status.text = i == 0 ? (kbm ? "READY  (keyboard + mouse)" : "READY  (controller)") : joined ? "JOINED  (B to leave)" : comingLater ? "coming later" : "press START to join";
             c.status.color = comingLater ? new Color(1f, 1f, 1f, 0.3f) : Color.white;
         }
     }
