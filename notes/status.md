@@ -63,7 +63,9 @@ damage from mobs. User: test every character and every projectile weapon; player
   30 deg; fix on 1-37 deg, 67-100%. banana_both: P1's bananas still hit P1's ring. TEMP: 'bananafix off|on' switch,
   'bananaprobe', [bananafields] (autotest only).
 - User's play-test log (P2 Megachad, real pads): P2 reached level 11 - XP works in play. Warnings only the known ones.
-- Not changed: version number (still 1.0.0-alpha), release zip, commits - waiting for the user.
+- User committed the fixes (22a6c37). Then: version 1.0.1-alpha, "SplitBonk V1.0.1 Alpha"; dist\SplitBonk-V1.0.1-Alpha.zip
+  made by make_release.ps1 (231 files, 0 backslash names, BepInEx/config/BepInEx.cfg console off, DLL = the build;
+  zip SHA256 D5C604A2...CF34509); the 1.0 zip moved to dist\old. Same DLL installed in the game.
 - BepInEx console came back on the user's PC (BepInEx.cfg [Logging.Console] Enabled = true - BepInEx's default when it
   makes a new config). The 1.0 alpha zip shipped NO BepInEx.cfg, so every player started with the console on (and
   Steam Input could then hide P2's pad). Fixed for the next release: release\BepInEx.cfg (only the console setting,
