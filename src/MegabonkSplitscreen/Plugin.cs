@@ -9,8 +9,8 @@ public class Plugin : BasePlugin
 {
     public const string Guid = "thesplitscreenguy.megabonksplitscreen";
     public const string Name = "MegabonkSplitscreen";
-    public const string Version = "1.0.0-alpha";
-    public const string ReleaseName = "SplitBonk V1.0 Alpha";   // the menu label, the README title, the release zip's name
+    public const string Version = "1.0.1-alpha";
+    public const string ReleaseName = "SplitBonk V1.0.1 Alpha";   // the menu label, the README title, the release zip's name
 
     private static Harmony hooks;
     private static BepInEx.Configuration.ConfigFile config;
