@@ -1,0 +1,36 @@
+# After the banana fix: both players Monke with the Bananarang, ~300 m apart, a ring of 5 skeletons around each -
+# P1's bananas must still hit P1's ring (the fix only touches P2's), P2's P2's.
+chars Monke Monke
+godp1
+godp2
+nopowerups
+wait 2
+open
+wait 1
+home 300
+clearloot
+wait 1
+clear
+home
+wait 1
+dmg reset
+spawn p1 Skeleton 5 8
+spawn p2 Skeleton 5 8
+wait 3
+shot banana_both
+wait 4
+dmg both armed, level 1
+weapon p1 Bananarang
+weapon p1 Bananarang
+weapon p2 Bananarang
+weapon p2 Bananarang
+clear
+home
+wait 1
+dmg reset
+spawn p1 Skeleton 5 8
+spawn p2 Skeleton 5 8
+wait 7
+dmg both armed, level 3
+bananaprobe P2 level 3
+quit

@@ -1,0 +1,42 @@
+# Players' report: at tier 2, P2 took no damage from mobs. P2 without god mode: skeletons hit P2 on stage 1 (reference),
+# then the players go through the exit portal and skeletons hit P2 on stage 2. P1 in god mode (carries the run).
+chars Fox Monke tier 2
+wait 2
+godp1
+open
+clear
+clearloot
+nopowerups
+wait 1
+health stage 1 start
+spawnside p2 Skeleton 5 3
+wait 6
+health stage 1 after skeletons
+shot t2_stage1
+clear
+toportal p1
+wait 1
+p1interact
+wait 4
+killbosses
+wait 3
+toportal p1 far
+wait 1
+toportal p1
+wait 1
+p1interact
+wait 4
+stagestate
+wait 10
+stagestate
+wait 6
+stagestate
+clear
+clearloot
+health stage 2 start
+spawnside p2 Skeleton 5 3
+wait 6
+health stage 2 after skeletons
+shot t2_stage2
+snap stage 2
+quit

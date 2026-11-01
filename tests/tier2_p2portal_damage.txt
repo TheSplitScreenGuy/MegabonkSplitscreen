@@ -1,0 +1,61 @@
+# Players' report: at tier 2 P2 took no damage from mobs. Like real play: P2 levels up (level-ups give a short
+# invulnerability), P2 summons the boss and takes the exit portal itself. On stage 2 skeletons hit P2 (test health:
+# hits still count down); P2's HP must drop like on stage 1.
+chars Monke Fox tier 2 map Forest
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+wait 1
+unweapon p2 all
+health stage 1 start
+spawn p2 Skeleton 4 3
+wait 6
+health stage 1 after 6 s of skeletons
+clear
+xp on
+addxp p2 60
+wait 1
+pickoffer
+wait 1
+pickoffer
+wait 1
+pickoffer
+wait 1
+pickoffer
+wait 1
+pickoffer
+wait 1
+pickoffer
+wait 1
+xp off
+toportal p2
+wait 1
+p2interact
+wait 2
+killbosses
+wait 3
+toportal p2 far
+wait 1
+toportal p2
+wait 1
+p2interact
+wait 4
+stagestate
+wait 10
+stagestate
+wait 6
+stagestate
+clear
+clearloot
+unweapon p2 all
+health stage 2 start
+spawn p2 Skeleton 4 3
+wait 6
+health stage 2 after 6 s of skeletons
+shot t2p_stage2
+statuses
+quit

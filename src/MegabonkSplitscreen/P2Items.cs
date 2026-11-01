@@ -54,6 +54,8 @@ internal static class P2Items
     private static readonly string[] HitMethods = { "FixedUpdate", "Update", "LateUpdate", "OnTriggerEnter", "OnTriggerStay", "OnCollisionEnter",
         "HitEnemy", "CheckCollision", "CheckZone", "CheckColliderCustom", "CheckSpawnCollision", "StepMovement", "MyFixedUpdate", "MyUpdate" };
     private static readonly List<bool> hitters = new();   // stack: true = P2's projectile
+    // The projectile hitting right now: true = P2's, false = P1's, null = no projectile hit running (auras, explosions)
+    public static bool? CurrentHitter => hitters.Count > 0 ? hitters[hitters.Count - 1] : null;
     private static void ApplyHitScopes(Harmony harmony)
     {
         var hooked = new List<string>();

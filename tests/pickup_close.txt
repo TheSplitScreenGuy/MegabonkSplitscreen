@@ -1,0 +1,26 @@
+# Players' report: "P2 can't grab pick-ups or XP" - with the players together, P1's pickup sphere (a trigger, instant)
+# took gems before P2's pull (every 0.1 s), even gems nearer P2. Players 4 m apart; 6 gems in a 3 m ring around P2,
+# then 6 around P1. Each player should get the gems on their side (most of their own ring).
+chars Fox Fox
+godp1
+godp2
+xp on
+autopick
+nopowerups
+wait 2
+open
+wait 1
+clearloot
+clear
+place 4
+wait 1
+xpstate start
+pickup p2 Xp 6 3
+wait 2.5
+xpstate ring around P2
+pickup p1 Xp 6 3
+wait 2.5
+xpstate ring around P1
+pickup p2 Health 1 2
+wait 2
+quit

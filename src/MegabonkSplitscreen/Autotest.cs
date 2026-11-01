@@ -558,7 +558,7 @@ internal static class Autotest
                 case "hold":
                     pads[pi].jumpUntil = Time.unscaledTime + Float(a, 2, 1f);
                     break;
-                case "home":   // home: P1 on the saved spot, P2 on the saved spot 40 m to the side (saved at the first call)
+                case "home":   // home [metres]: P1 on the saved spot, P2 on the saved spot that far away (40 by default; saved at the first call)
                     Cheat(() =>
                     {
                         var p1 = MyPlayer.Instance;
@@ -567,8 +567,20 @@ internal static class Autotest
                         if (homeA == null)
                         {
                             homeA = p1.transform.position;
-                            Vector3 side = homeA.Value + p1.transform.right * 40f;
+                            float apart = Float(a, 1, 40f);
+                            Vector3 side = homeA.Value + p1.transform.right * apart;
                             if (Physics.Raycast(side + Vector3.up * 30f, Vector3.down, out var hit, 80f)) side = hit.point + Vector3.up;
+                            // Far apart (user: 300 m so each player's fight is clearly their own): open, flat ground at that
+                            // distance in any of 16 directions, else nearer in 25 m steps
+                            if (apart > 60f)
+                            {
+                                Vector3? found = null;
+                                for (float d = apart; d >= 60f && found == null; d -= 25f)
+                                    for (int k = 0; k < 16 && found == null; k++)
+                                        if (Clear(homeA.Value + Quaternion.Euler(0f, k * 22.5f, 0f) * p1.transform.right * d, out Vector3 g)) found = g + Vector3.up;
+                                if (found != null) side = found.Value;
+                                else Report($"home: no open ground {apart:F0} m away - P2 {apart:F0} m to P1's right as is");
+                            }
                             homeB = side;
                         }
                         void Put(Transform t, Rigidbody rb, Vector3 at) { t.position = at; if (rb != null) { rb.position = at; rb.velocity = Vector3.zero; } }
@@ -816,7 +828,7 @@ internal static class Autotest
                         var at0 = PlayerPos(pi);
                         var b2 = P2Body.Body?.transform;
                         var list = Resources.FindObjectsOfTypeAll<Pickup>().Where(x => x != null && x.gameObject.scene.IsValid() && (x.transform.position - at0).sqrMagnitude < 144f)
-                            .Select(x => $"{x.ePickup} {x.GetValue()} active {x.gameObject.activeInHierarchy} picked {x.pickedUp} to {(x.target == null ? "-" : b2 != null && x.target.Pointer == b2.Pointer ? "P2" : x.target.name)}").ToList();
+                            .Select(x => $"{x.ePickup} {x.GetValue()} {Vector3.Distance(x.transform.position, at0):F1} m (dy {x.transform.position.y - at0.y:F1}) active {x.gameObject.activeInHierarchy} picked {x.pickedUp} canPickup {x.CanPickup()} to {(x.target == null ? "-" : b2 != null && x.target.Pointer == b2.Pointer ? "P2" : x.target.name)}").ToList();
                         Report($"pickups near P{pi + 1} ({list.Count}): {string.Join("; ", list.Take(15))}; P2 xp {P2XpBar.Xp}, P1 xp {MyPlayer.Instance?.inventory?.playerXp?.xp}");
                     });
                     break;
@@ -1321,9 +1333,9 @@ internal static class Autotest
                     });
                     break;
                 case "mapcheck": Cheat(MapView.Describe); break;
-                case "godp1": Cheat(() => { P2Health.SetP1TestHealth(true); Report("P1 test health on"); }); break;
+                case "godp1": Cheat(() => { bool on = a.Length < 2 || a[1] != "off"; P2Health.SetP1TestHealth(on); Report($"P1 test health {(on ? "on" : "off")}"); }); break;
                 case "xp": xpOn = a.Length > 1 && a[1] == "on"; Report($"XP {(xpOn ? "on" : "off")}"); break;
-                case "godp2": Cheat(() => { P2Health.SetP2TestHealth(true); Report("P2 test health on"); }); break;
+                case "godp2": Cheat(() => { bool on = a.Length < 2 || a[1] != "off"; P2Health.SetP2TestHealth(on); Report($"P2 test health {(on ? "on" : "off")}"); }); break;
                 case "unweapon": Cheat(() => RemoveWeapon(a)); break;
                 case "clear": Cheat(ClearEnemies); break;
                 case "clearloot": Cheat(ClearLoot); break;
@@ -1339,6 +1351,26 @@ internal static class Autotest
                     break;
                 case "dmg":
                     Cheat(() => { if (a.Length > 1 && a[1] == "reset") spawned.Clear(); else DamageReport(a.Length > 1 ? string.Join(" ", a.Skip(1)) : ""); });
+                    break;
+                case "bananafix":   // TEMP bananafix off|on: P2's banana aim fix (one run measures without and with it)
+                    P2Weapons.BananaFix = a.Length < 2 || a[1] != "off";
+                    Report($"P2 banana aim fix {(P2Weapons.BananaFix ? "on" : "off")}");
+                    break;
+                case "bananaprobe":   // TEMP bananaprobe [label]: P2's outward bananas vs the nearest enemy (resets)
+                    Report($"banana {(a.Length > 1 ? string.Join(" ", a.Skip(1)) : "")}: {P2Weapons.BananaProbe(true)}");
+                    break;
+                case "spawnside":   // spawnside <p> <EEnemy> <count> <distance> [turn deg]: in an arc on the side away from the other player
+                    Cheat(() => SpawnSide(pi, a));
+                    break;
+                case "knock":   // knock [reset|label]: enemy knockbacks near P2 (away from / towards P2)
+                    Cheat(() => { if (a.Length > 1 && a[1] == "reset") Knockback.Reset(); else Report($"knock {(a.Length > 1 ? string.Join(" ", a.Skip(1)) : "")}: {Knockback.Report()}"); });
+                    break;
+                case "xpstate":   // xpstate [label]: both players' XP and level
+                    Cheat(() =>
+                    {
+                        var px = MyPlayer.Instance?.inventory?.playerXp;
+                        Report($"xp {(a.Length > 1 ? string.Join(" ", a.Skip(1)) : "")}: P1 {px?.xp} (level {px?.level}), P2 {P2XpBar.Xp} (level {Inventory__Items__Pickups.XpUtility.XpToLevel(P2XpBar.Xp)}); kills P1 {P2Pickups.KillsP1}, P2 {P2Pickups.KillsP2}");
+                    });
                     break;
                 case "statcompare":   // TEMP: every stat where P1's value (the game's) and P2's (P2's own table) differ
                     Cheat(() =>
@@ -1376,7 +1408,7 @@ internal static class Autotest
                     Cheat(() =>
                     {
                         var ph = MyPlayer.Instance?.inventory?.playerHealth;
-                        Report($"health: P1 {ph?.hp}/{ph?.maxHp} shield {ph?.shield:F0}/{ph?.maxShield:F0}; P2 {P2Health.Hp}/{P2Health.MaxHp} shield {P2Health.Shield:F0}/{P2Health.MaxShield}");
+                        Report($"health {(a.Length > 1 ? string.Join(" ", a.Skip(1)) : "")}: P1 {ph?.hp}/{ph?.maxHp} shield {ph?.shield:F0}/{ph?.maxShield:F0}; P2 {P2Health.Hp}/{P2Health.MaxHp} shield {P2Health.Shield:F0}/{P2Health.MaxShield}");
                     });
                     break;
                 case "passives": Cheat(() => Passives(a.Length > 1 ? string.Join(" ", a.Skip(1)) : "")); break;
@@ -1505,6 +1537,16 @@ internal static class Autotest
     // P2's via P2Weapons.Sync
     private static void RemoveWeapon(string[] a)
     {
+        // unweapon <p> all: every weapon that player has (each character starts with its own)
+        if (a.Length >= 3 && a[2] == "all")
+        {
+            var held = a[1] == "p1" ? MyPlayer.Instance?.inventory?.weaponInventory?.weapons : P2Inventory.Weapons?.weapons;
+            var keys = new List<EWeapon>();
+            if (held != null) foreach (var kv in held) keys.Add(kv.Key);
+            foreach (var k in keys) RemoveWeapon(new[] { a[0], a[1], k.ToString() });
+            if (keys.Count == 0) Report($"unweapon: {a[1]} has no weapons");
+            return;
+        }
         if (a.Length < 3 || !Enum.TryParse(a[2], true, out EWeapon w)) { Report("unweapon: usage 'unweapon <p> <EWeapon>'"); return; }
         if (a[1] == "p1")
         {
@@ -1987,6 +2029,34 @@ internal static class Autotest
             if (en != null) { made++; spawned.Add((en, pi, en.maxHp, en.Pointer)); }
         }
         Report($"spawned {made}/{n} {e} {dist:F0} m around P{pi + 1}");
+    }
+
+    // spawnside <p> <EEnemy> <count> <distance>: an arc (+-40 deg) on that player's side away from the other player -
+    // the players' report "P2 shoots where P1 aims": each player gets enemies only behind them
+    private static void SpawnSide(int pi, string[] a)
+    {
+        if (a.Length < 3 || !Enum.TryParse(a[2], true, out Actors.Enemies.EEnemy e)) { Report("spawnside: usage 'spawnside <p> <EEnemy> [count] [distance]'"); return; }
+        int n = (int)Float(a, 3, 4f);
+        float dist = Float(a, 4, 8f);
+        var data = DataManager.Instance?.GetEnemyData(e);
+        var em = Assets.Scripts.Managers.EnemyManager.Instance;
+        if (data == null || em == null) { Report($"spawnside: no data for {e}"); return; }
+        Vector3 at = PlayerPos(pi), other = PlayerPos(1 - pi);
+        Vector3 away = at - other;
+        away.y = 0f;
+        away = away.sqrMagnitude > 0.01f ? away.normalized : Vector3.forward;
+        // optional 5th value: turn the arc by that many degrees (90 = beside the player, 180 = on the other player's side)
+        away = Quaternion.Euler(0f, Float(a, 5, 0f), 0f) * away;
+        int made = 0;
+        for (int i = 0; i < n; i++)
+        {
+            float ang = n > 1 ? -40f + 80f * i / (n - 1) : 0f;
+            Vector3 pos = at + Quaternion.Euler(0f, ang, 0f) * away * dist;
+            if (Physics.Raycast(pos + Vector3.up * 20f, Vector3.down, out var hit, 60f, 1 << 8)) pos = hit.point + Vector3.up * 0.5f;
+            var en = em.SpawnEnemy(data, pos, 0, true, Assets.Scripts.Actors.Enemies.EEnemyFlag.None, false, 1f);
+            if (en != null) { made++; spawned.Add((en, pi, en.maxHp, en.Pointer)); }
+        }
+        Report($"spawned {made}/{n} {e} {dist:F0} m behind P{pi + 1} (away from P{2 - pi})");
     }
 
     // stat <p> <EStat>: that player's stat value (P2's from P2's own table)

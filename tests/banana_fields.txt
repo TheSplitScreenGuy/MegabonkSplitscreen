@@ -1,0 +1,26 @@
+# TEMP field probe: P2's banana ~300 m from P1, fix off then on; [bananafields] while the players are > 100 m apart.
+chars Monke Monke
+godp1
+godp2
+nopowerups
+wait 2
+open
+wait 1
+home 300
+clearloot
+wait 1
+unweapon p1 all
+bananafix off
+clear
+home
+wait 1
+spawnside p2 Skeleton 3 9 90
+wait 4
+log ----- fix on -----
+bananafix on
+clear
+home
+wait 1
+spawnside p2 Skeleton 3 9 90
+wait 4
+quit

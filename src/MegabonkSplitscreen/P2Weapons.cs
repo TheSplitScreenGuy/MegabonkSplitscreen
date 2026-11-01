@@ -418,7 +418,72 @@ internal static class P2Weapons
             if (pre) harmony.Patch(m, prefix: hm); else harmony.Patch(m, postfix: hm);
             done.Add($"ProjectileDragonsBreath.{name} (kept on P2)");
         }
+        // 1.0 alpha+ (players' report: "P2 fires at P1's target / in P1's direction"; aim sweep 300 m apart, P1 unarmed:
+        // P2's Hero Sword / Corrupt Sword / Space Noodle damaged enemies at P1, P2's Bluetooth Dagger hit nothing):
+        //  - the swords keep their hitbox in their own fields (hitboxPos, movingProjectilePosition), worked out from "the
+        //    player" when the slash starts - moving the slash object didn't move them
+        //  - the laser builds its damage box (center / rotation / halfExtents) in FixedUpdate from its target and "the
+        //    player" - only GetBeamStart was moved
+        //  - the dagger flies and hits relative to "the player" (it worked 30 m from P1, not 370 m)
+        // So their start, per-frame and hit code runs with P2 as the player, like the shotgun, axe and banana above.
+        foreach (var t in new[] { typeof(ProjectileHeroSword), typeof(ProjectileCringeSword), typeof(ProjectileBluetooth) })
+            foreach (var name in new[] { "TryInit", "FindMovementDirection", "MyUpdate", "MyFixedUpdate", "StepMovement", "CheckZone", "CheckColliderCustom", "CheckSpawnCollision", "HitTarget" })
+                ZoneHook(harmony, AccessTools.DeclaredMethod(t, name), false, done);
+        foreach (var name in new[] { "Update", "FixedUpdate", "StartLaser", "RenderLaser", "FindTarget" })
+            ZoneHook(harmony, AccessTools.DeclaredMethod(typeof(LaserBeamAttack), name), true, done);
+        // User (P2's banana didn't fly at the nearest enemy; banana_aim: it flew along the P1 -> P2 line even after the
+        // re-aim set its startDirection): the banana works out its throw direction in TryInit / FindMovementDirection from
+        // "the player" (P1). They run with P2 as the player now. (Not GetMovementDirection: its turn-back hook needs P1
+        // where P1 really is.)
+        foreach (var name in new[] { "TryInit", "FindMovementDirection" })
+            ZoneHook(harmony, AccessTools.DeclaredMethod(typeof(ProjectileBanana), name), false, done);
+        // banana_aim (zone on TryInit alone): some throws never happened - the banana is set up at P1's spot and TryInit,
+        // with "the player" now at P2 300 m away, gave up. So P2's banana is moved to P2 first (before the zone: it needs
+        // P1 where P1 really is)
+        var bananaInit = AccessTools.DeclaredMethod(typeof(ProjectileBanana), "TryInit");
+        if (bananaInit != null && Harmony.GetAllPatchedMethods().Contains(bananaInit))
+        {
+            harmony.Patch(bananaInit, prefix: new HarmonyMethod(typeof(P2Weapons), nameof(MoveBananaBeforeInit)) { priority = Priority.First });
+            done.Add("ProjectileBanana.TryInit (moved to P2 first)");
+        }
+        else done.Add("ProjectileBanana.TryInit move SKIPPED (zone not on it)");
         ModLog.Info($"P2Weapons: aimed-weapon hooks: {string.Join(", ", done)}");
+    }
+
+    // Adds "P2 as the player" around m. IL2CPP merges methods with identical machine code, and two Harmony hooks on one
+    // native function crash: if a method sharing m's native code is already patched, the zone is added to THAT patch
+    // (its detour also runs for m's calls); a native function gets the zone once.
+    private static readonly HashSet<IntPtr> zoneNatives = new();
+    private static void ZoneHook(Harmony harmony, System.Reflection.MethodInfo m, bool constant, List<string> done)
+    {
+        if (m == null) return;
+        string label = $"{m.DeclaringType?.Name}.{m.Name}";
+        IntPtr native = NativePointer(m);
+        if (native != IntPtr.Zero && zoneNatives.Contains(native)) { done.Add($"{label} (zone shared)"); return; }
+        System.Reflection.MethodBase target = null;
+        if (native != IntPtr.Zero)
+            foreach (var pm in Harmony.GetAllPatchedMethods())
+                if (NativePointer(pm) == native) { target = pm; break; }
+        if (target == null)
+        {
+            bool ok = !IsNativeCodeHooked(m) && (IsNativeCodeUnique(m) || SharedOnlyWithin(m, typeof(ProjectileBase))
+                                                || SharedOnlyWithin(m, typeof(Assets.Scripts.Game.Combat.ConstantAttacks.ConstantAttack)));
+            if (!ok) { done.Add($"{label} SKIPPED (shared native code)"); return; }
+            target = m;
+        }
+        // The patch's instance parameter must fit the patched method's type: only projectiles (or only always-on attacks).
+        // v1.0.1 test: HeroSword.FindMovementDirection shares its (empty) code with PlayerMovement.Update - the zone
+        // must never go on a player method.
+        var family = constant ? typeof(Assets.Scripts.Game.Combat.ConstantAttacks.ConstantAttack) : typeof(ProjectileBase);
+        if (target.DeclaringType == null || !family.IsAssignableFrom(target.DeclaringType)) { done.Add($"{label} SKIPPED (shares code with {target.DeclaringType?.Name}.{target.Name})"); return; }
+        try
+        {
+            harmony.Patch(target, prefix: new HarmonyMethod(typeof(P2Weapons), constant ? nameof(BeforeP2ZoneConst) : nameof(BeforeP2Zone)),
+                finalizer: new HarmonyMethod(typeof(P2Weapons), constant ? nameof(AfterP2ZoneConst) : nameof(AfterP2Zone)));
+            if (native != IntPtr.Zero) zoneNatives.Add(native);
+            done.Add(target == m ? $"{label} (P2 as the player)" : $"{label} (P2 as the player, via {target.DeclaringType?.Name}.{target.Name})");
+        }
+        catch (Exception e) { done.Add($"{label} FAILED ({e.Message})"); }
     }
 
     private static bool IsP2Shot(ProjectileBase p) => p != null && body != null && p2Projectiles.Contains(p.Pointer);
@@ -476,13 +541,43 @@ internal static class P2Weapons
 
     // P2's projectile code that asks "where is the player?" (shotgun cone, axe orbit): P2's movement copy is "the player"
     // and P1's own object stands at P2's spot for the call; both put back in the finalizer (outermost call only)
-    private static void BeforeP2Zone(ProjectileBase __instance, out PlayerMovement __state)
+    private static void BeforeP2Zone(ProjectileBase __instance, System.Reflection.MethodBase __originalMethod, out PlayerMovement __state)
     {
         __state = null;
-        if (!(IsP2Shot(__instance) || (__instance != null && body != null && p2Bananas.Contains(__instance.Pointer))) || P2Movement.Pm == null || zoneMoved) return;
-        __state = PlayerMovement.Instance;
+        if (!(IsP2Shot(__instance) || (__instance != null && body != null && p2Bananas.Contains(__instance.Pointer)))) return;
+        // TEMP test switch: the banana's throw-direction zone off (banana_aim measures without and with it)
+        if (!BananaFix && (__originalMethod?.Name == "TryInit" || __originalMethod?.Name == "FindMovementDirection") && __instance.TryCast<ProjectileBanana>() != null) return;
+        __state = EnterZone();
+    }
+
+    // P2's banana to P2's spot before its TryInit (runs first, before the zone)
+    private static void MoveBananaBeforeInit(ProjectileBase __instance)
+    {
+        if (!BananaFix || !IsP2Shot(__instance) || zoneMoved) return;
+        MoveProjectile(__instance, "before TryInit");
+    }
+
+    // P2's always-on attacks (Space Noodle's laser) that ask "where is the player?"
+    private static void BeforeP2ZoneConst(Assets.Scripts.Game.Combat.ConstantAttacks.ConstantAttack __instance, out PlayerMovement __state)
+    {
+        __state = OnP2Body(__instance) ? EnterZone() : null;
+    }
+
+    private static Exception AfterP2ZoneConst(Assets.Scripts.Game.Combat.ConstantAttacks.ConstantAttack __instance, Exception __exception, PlayerMovement __state)
+    {
+        if (__state == null) return __exception;
+        ExitZone(__state);
+        if (AimLogDue("zone" + __instance.GetIl2CppType().Name)) ModLog.Info($"[aim] P2's {__instance.GetIl2CppType().Name} (P2 as the player): enemy HP within 25 m of P2 {zoneHpBefore:F0} -> {EnemyHpNearP2():F0}");
+        return __exception;
+    }
+
+    // P2's movement copy becomes PlayerMovement.Instance and P1's object stands at P2's spot; null if already in one
+    private static PlayerMovement EnterZone()
+    {
+        if (P2Movement.Pm == null || zoneMoved) return null;
+        var __state = PlayerMovement.Instance;
         PlayerMovement.Instance = P2Movement.Pm;
-        zoneHpBefore = EnemyHpNearP2();
+        if (ModLog.Debug) zoneHpBefore = EnemyHpNearP2();   // log only (sums every enemy: not in normal play, it runs per frame)
         // v0.43.3 (P2 as "the player" movement wasn't enough - no HP lost): P1's own object stands at P2's spot for
         // this check only (put back in the finalizer, same frame - nothing else runs in between)
         var p1 = MyPlayer.Instance;
@@ -492,6 +587,14 @@ internal static class P2Weapons
             zoneMoved = true;
             p1.transform.position = P2Movement.Pm.transform.position;
         }
+        return __state;
+    }
+
+    private static void ExitZone(PlayerMovement before)
+    {
+        PlayerMovement.Instance = before;
+        if (zoneMoved && MyPlayer.Instance != null) MyPlayer.Instance.transform.position = zoneP1Pos;
+        zoneMoved = false;
     }
     private static Vector3 zoneP1Pos;
     private static bool zoneMoved;
@@ -499,9 +602,7 @@ internal static class P2Weapons
     private static Exception AfterP2Zone(ProjectileBase __instance, Exception __exception, PlayerMovement __state)
     {
         if (__state == null) return __exception;
-        PlayerMovement.Instance = __state;
-        if (zoneMoved && MyPlayer.Instance != null) MyPlayer.Instance.transform.position = zoneP1Pos;
-        zoneMoved = false;
+        ExitZone(__state);
         if (AimLogDue("zone" + __instance.GetIl2CppType().Name)) ModLog.Info($"[aim] P2's {__instance.GetIl2CppType().Name} (P2 as the player): enemy HP within 25 m of P2 {zoneHpBefore:F0} -> {EnemyHpNearP2():F0}, at {__instance.transform.position} ({Vector3.Distance(__instance.transform.position, body.transform.position):F1} m from P2)");
         return __exception;
     }
@@ -713,6 +814,16 @@ internal static class P2Weapons
         if (shotgun != null) shotgun.attackDir = dir;
         var dex = p.TryCast<ProjectileDexecutioner>();
         if (dex != null) dex.attackDir = dir;
+        // 1.0 alpha+ (user: P2's banana doesn't fly at the nearest enemy): the banana steers by its own startDirection /
+        // movementVelocity, worked out by the game from P1's position (towards a target near P2 - from 300 m away that is
+        // roughly "from P1 to P2") and only turned by the facing difference when moved. They follow the new aim now.
+        var banana = p.TryCast<ProjectileBanana>();
+        if (banana != null && BananaFix)
+        {
+            Vector3 flatDir = new Vector3(dir.x, 0f, dir.z).normalized;
+            banana.startDirection = flatDir * Mathf.Max(banana.startDirection.magnitude, 0.01f) + Vector3.up * banana.startDirection.y;
+            banana.movementVelocity = flatDir * new Vector3(banana.movementVelocity.x, 0f, banana.movementVelocity.z).magnitude + Vector3.up * banana.movementVelocity.y;
+        }
         if (aimLogs++ < 5) ModLog.Info($"P2 projectile {p.name} re-aimed via {via} at {target.enemyData?.enemyName} ({flat.magnitude:F1} away): {old} -> {dir}");
     }
 
@@ -800,7 +911,7 @@ internal static class P2Weapons
         var whirl = p.TryCast<ProjectileWhirlwind>();
         if (whirl != null) whirl.startDirection = turn * whirl.startDirection;
         var banana = p.TryCast<ProjectileBanana>();
-        if (banana != null) { banana.startDirection = turn * banana.startDirection; banana.movementVelocity = turn * banana.movementVelocity; p2Bananas.Add(p.Pointer); p2BananaObjs[p.Pointer] = banana; }
+        if (banana != null) { banana.startDirection = turn * banana.startDirection; banana.movementVelocity = turn * banana.movementVelocity; p2Bananas.Add(p.Pointer); p2BananaObjs[p.Pointer] = banana; bananaStart.Remove(p.Pointer); }
         var hero = p.TryCast<ProjectileHeroSword>();
         if (hero != null) { hero.movingProjectileDir = turn * hero.movingProjectileDir; hero.movingProjectileRotation = turn * hero.movingProjectileRotation; hero.hitboxPos = Pos(hero.hitboxPos); hero.movingProjectilePosition = Pos(hero.movingProjectilePosition); }
         var cringe = p.TryCast<ProjectileCringeSword>();
@@ -833,21 +944,75 @@ internal static class P2Weapons
         ModLog.Info("P2Weapons: P2's bananas return to P2");
     }
 
-    private static int bananaLogs;
+    // TEMP test switch (autotest 'bananafix off|on'): one run measures P2's banana without and with the fix
+    public static bool BananaFix = true;
+
+    // TEMP probe ('bananaprobe'): P2's bananas on their way OUT - angle between their heading and the direction to the
+    // enemy nearest the banana, sampled per frame
+    private static int probeSamples;
+    private static float probeAngleSum;
+    private static int probeWithin30;
+    public static string BananaProbe(bool reset)
+    {
+        string s = probeSamples == 0 ? "no outward banana frames" :
+            $"{probeSamples} bananas: first 0.3 s of flight vs the nearest enemy, mean angle {probeAngleSum / probeSamples:F0} deg, within 30 deg {100f * probeWithin30 / probeSamples:F0}%";
+        if (reset) { probeSamples = probeWithin30 = 0; probeAngleSum = 0f; }
+        return s;
+    }
+
+    private static int bananaLogs, fieldLogs;
     private static void AfterBananaDirection(ProjectileBase __instance, ref Vector3 __result)
     {
         if (__instance == null || body == null || !p2Bananas.Contains(__instance.Pointer)) return;
+        // TEMP (banana_aim: the re-aim's startDirection didn't steer it): the first frames of the first bananas, every field
+        if (Autotest.Active && fieldLogs < 60 && Time.frameCount % 3 == 0 && MyPlayer.Instance != null
+            && (MyPlayer.Instance.transform.position - body.transform.position).sqrMagnitude > 100f * 100f)
+        {
+            var b = __instance.TryCast<ProjectileBanana>();
+            if (b != null)
+            {
+                fieldLogs++;
+                var e0 = NearestEnemyToP2(b.transform.position);
+                ModLog.Info($"[bananafields] {b.Pointer.ToInt64() % 10000} pos {b.transform.position} result {__result} start {b.startDirection} vel {b.movementVelocity} dir {b.direction} " +
+                            $"rb {(b.rb != null ? b.rb.velocity.ToString() : "-")} toPlayer {b.dirToPlayer} dist {b.distToPlayer:F1} close {b.isCloseToPlayer}; nearest enemy dir " +
+                            $"{(e0 != null ? (e0.transform.position - b.transform.position).normalized.ToString() : "-")}");
+            }
+        }
         var p1m = MyPlayer.Instance?.playerRenderer?.rendererObject?.transform;
         if (p1m == null || __result.sqrMagnitude < 0.0001f) return;
         Vector3 pos = __instance.transform.position;
         Vector3 toP1 = p1m.position - pos, toP2 = body.transform.position + Vector3.up - pos;
         // Heading for P1 = on its way back: go to P2 instead, same speed
-        if (Vector3.Angle(__result, toP1) > 12f) return;
+        if (Vector3.Angle(__result, toP1) > 12f)
+        {
+            return;
+        }
         __result = toP2.normalized * __result.magnitude;
         if (bananaLogs++ < 3) ModLog.Info($"[banana] P2's banana turned back towards P2 ({toP2.magnitude:F1} away)");
     }
 
     // Caught by P2 when back (called from Tick)
+    // TEMP probe (autotest): each P2 banana's real flight - where it is 0.3 s after it was first seen vs the direction to
+    // the enemy nearest its starting point (the steering hook is called too rarely to measure the heading)
+    private static readonly Dictionary<IntPtr, (Vector3 pos, float time, Vector3 toEnemy, bool measured)> bananaStart = new();
+    private static void ProbeBanana(ProjectileBanana b)
+    {
+        if (!Autotest.Active) return;
+        if (!bananaStart.TryGetValue(b.Pointer, out var s))
+        {
+            var e = NearestEnemyToP2(b.transform.position);
+            bananaStart[b.Pointer] = (b.transform.position, Time.time, e != null ? e.transform.position - b.transform.position : Vector3.zero, false);
+            return;
+        }
+        if (s.measured || Time.time - s.time < 0.3f || s.toEnemy == Vector3.zero) return;
+        Vector3 flight = b.transform.position - s.pos;
+        float ang = Vector3.Angle(new Vector3(flight.x, 0f, flight.z), new Vector3(s.toEnemy.x, 0f, s.toEnemy.z));
+        probeSamples++;
+        probeAngleSum += ang;
+        if (ang <= 30f) probeWithin30++;
+        bananaStart[b.Pointer] = (s.pos, s.time, s.toEnemy, true);
+    }
+
     private static void CatchBananas()
     {
         if (p2Bananas.Count == 0) return;
@@ -856,6 +1021,7 @@ internal static class P2Weapons
         {
             var b = kv.Value;
             if (b == null || !b.gameObject.activeInHierarchy || !p2Bananas.Contains(kv.Key)) continue;
+            ProbeBanana(b);
             float d = Vector3.Distance(b.transform.position, body.transform.position + Vector3.up);
             if (Time.time > b.readyToCollectTime && b.sqrCollectDistance > 0f && d * d <= b.sqrCollectDistance)
             {

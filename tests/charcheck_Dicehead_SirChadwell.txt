@@ -1,0 +1,67 @@
+# Character check (players' reports after the 1.0 alpha): P1 Dicehead, P2 SirChadwell, each with their own starting weapon, ~300 m apart.
+# Fight: a ring of skeletons around each player (damage per ring, knockback near P2); XP from kills and walking over
+# the drops; a gem 7 m away walked into; the heart 7 m away walked into with normal health.
+chars Dicehead SirChadwell
+godp1
+godp2
+xp on
+autopick
+wait 2
+open
+wait 1
+home 300
+clearloot
+wait 1
+xpstate start
+dmg reset
+knock reset
+spawn p1 Skeleton 6 7
+spawn p2 Skeleton 6 7
+wait 3
+shot cc_fight
+wait 4
+dmg fight Dicehead vs SirChadwell
+knock fight
+xpstate after fight
+go p1 1 0
+go p2 1 0
+wait 1.5
+go p1 -1 0
+go p2 -1 0
+wait 3
+stop p1
+stop p2
+wait 1
+xpstate after walking
+home
+clear
+pickup p1 Xp 1 7
+pickup p2 Xp 1 7
+wait 0.5
+xpstate before gem walk
+go p1 0 1
+go p2 0 1
+wait 2.5
+stop p1
+stop p2
+wait 1
+xpstate after gem walk
+home
+clear
+godp1 off
+godp2 off
+hurt p1 40
+hurt p2 40
+health hurt
+pickup p1 Health 1 7
+pickup p2 Health 1 7
+wait 0.5
+go p1 0 1
+go p2 0 1
+wait 2.5
+stop p1
+stop p2
+wait 1
+health after heart
+shot cc_heart
+quit

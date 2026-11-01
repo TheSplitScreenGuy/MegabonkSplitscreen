@@ -72,6 +72,7 @@ public class Plugin : BasePlugin
         GoldPopups.Apply(hooks);
         P2Weapons.ApplyAimHooks(hooks);
         P2Weapons.ApplyTargetingHooks(hooks);   // after the melee/return hooks (one hook per native function)
+        Knockback.Apply(hooks);
         P2Items.Apply(hooks);                   // last: its projectile hit scopes only take methods nobody else needs
         // v0.25.3 dump: P2's starting AddWeapon -> UpdateStat -> CombatAura.OnStatUpdate (through these hooks) never
         // returned = the freeze when P2 took control. Not applied any more (kept for reference).

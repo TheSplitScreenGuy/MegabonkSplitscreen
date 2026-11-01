@@ -1,0 +1,67 @@
+# User's case: P2 Megachad picked up the Bananarang (not Monke's starting weapon). P1 unarmed, ~300 m apart; Megachad's
+# own weapon off so the damage is the banana's. 3 skeletons 9 m from P2 beside (90) and towards P1 (180), fix off/on.
+chars Fox Megachad
+godp1
+godp2
+nopowerups
+wait 2
+open
+wait 1
+home 300
+clearloot
+wait 1
+unweapon p1 all
+unweapon p2 all
+weapon p2 Bananarang
+wait 1
+bananafix off
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 3 9 90
+wait 0.5
+bananaprobe (discard)
+wait 3
+shot megachad_banana_off
+wait 3
+bananaprobe Megachad fix off, enemies at 90 deg
+dmg Megachad fix off, enemies at 90 deg
+bananafix on
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 3 9 90
+wait 0.5
+bananaprobe (discard)
+wait 3
+shot megachad_banana_on
+wait 3
+bananaprobe Megachad fix on, enemies at 90 deg
+dmg Megachad fix on, enemies at 90 deg
+bananafix off
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 3 9 180
+wait 0.5
+bananaprobe (discard)
+wait 3
+wait 3
+bananaprobe Megachad fix off, enemies at 180 deg
+dmg Megachad fix off, enemies at 180 deg
+bananafix on
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 3 9 180
+wait 0.5
+bananaprobe (discard)
+wait 3
+wait 3
+bananaprobe Megachad fix on, enemies at 180 deg
+dmg Megachad fix on, enemies at 180 deg
+quit

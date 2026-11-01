@@ -91,9 +91,10 @@ After a run with a problem, quit the game and send `BepInEx\plugins\MegabonkSpli
 the Megabonk folder, with what you saw. The log is replaced on every start of the game, so grab it **before** starting
 the game again. For hard-to-catch bugs, set `DebugLogging = true` first.
 
-If player 2's controller isn't detected, check that the BepInEx console window is off
-(`BepInEx\config\BepInEx.cfg`, `[Logging.Console]`, `Enabled = false`). With a console window open, Steam can
-switch controllers to its desktop layout (keyboard and mouse), and the second pad can't be seen.
+If a black BepInEx console window opens with the game, or player 2's controller isn't detected, switch the console
+off: `BepInEx\config\BepInEx.cfg`, `[Logging.Console]`, `Enabled = false`. With a console window open, Steam can
+switch controllers to its desktop layout (keyboard and mouse), and the second pad can't be seen. The release zip
+ships this setting already off; it can come back if BepInEx's config is deleted, or if you installed an older zip.
 
 ## Known limitations (alpha)
 - Two players only (a 4-player version is planned).

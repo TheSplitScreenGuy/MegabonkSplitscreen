@@ -15,7 +15,8 @@ Install
 -------
 1. Find your Megabonk folder: in Steam, right-click Megabonk > Manage > Browse local files.
 2. Extract everything in this zip into that folder, so that winhttp.dll sits next to Megabonk.exe and the BepInEx
-   folder merges with any existing one.
+   folder merges with any existing one. If asked, let it replace BepInEx\config\BepInEx.cfg: it switches BepInEx's
+   console window off (see "If something's wrong").
 3. Start Megabonk from Steam as usual. The first start takes a minute or two longer while BepInEx prepares itself;
    later starts are normal.
 
@@ -42,6 +43,15 @@ Playing
 - Each player picks a character; player 2 starts on player 1's pick.
 - Pause menu > CAMERA: SPLIT (always two views) or DYNAMIC (one view while you're close together). Remembered.
 - A downed player can be revived: stand at their gravestone until the ring fills.
+
+
+If something's wrong
+--------------------
+- A black BepInEx console window opens with the game, or player 2's controller isn't seen: open
+  BepInEx\config\BepInEx.cfg and under [Logging.Console] set  Enabled = false . With that window open, Steam can switch
+  the controllers to its desktop layout (keyboard and mouse) and the second controller can't be read.
+- Anything else: send BepInEx\plugins\MegabonkSplitscreen\MegabonkSplitscreen.log (it's replaced on every start of
+  the game, so copy it before playing again) with what you saw.
 
 
 FAQ

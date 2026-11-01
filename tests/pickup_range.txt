@@ -1,0 +1,33 @@
+# Players' report: "P2 can't grab pick-ups or XP". Bug found in the code: P2's pickup radius = P1's sphere measured when
+# P2 spawned x P2's / P1's CURRENT PickupRange - each P1 range upgrade shrank P2's. A gem 6 m from P2 (radius 9) is
+# pulled in; then P1 takes 5 Attraction tomes; another gem 6 m from P2 must still be pulled in. Players ~300 m apart.
+chars Fox Fox
+godp1
+godp2
+xp on
+autopick
+nopowerups
+wait 2
+open
+wait 1
+home 300
+clearloot
+clear
+wait 1
+stat p1 PickupRange
+stat p2 PickupRange
+xpstate start
+pickup p2 Xp 1 6
+wait 2.5
+xpstate gem 6 m from P2 (base ranges)
+tome p1 Attraction 5
+wait 1
+stat p1 PickupRange
+stat p2 PickupRange
+pickup p2 Xp 1 6
+wait 2.5
+xpstate gem 6 m from P2 after P1's 5 Attraction tomes
+pickup p1 Xp 1 12
+wait 2.5
+xpstate gem 12 m from P1 (P1's bigger range)
+quit

@@ -1,0 +1,27 @@
+# Co-op XP split, cleanly: players 6 m apart, standing still on open ground for 90 s, the game's own spawns.
+# Kills (by the nearer player) and XP per player every 30 s - are enemies spread around both players, or mostly P1?
+chars Fox Fox
+godp1
+godp2
+xp on
+autopick
+wait 2
+open
+wait 1
+clearloot
+place 6
+wait 1
+knock reset
+kills reset
+xpstate start
+snap start
+wait 30
+xpstate after 30 s
+wait 30
+xpstate after 60 s
+snap 60 s
+wait 30
+xpstate after 90 s
+enemycount
+shot coop_still
+quit

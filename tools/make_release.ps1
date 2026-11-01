@@ -1,9 +1,11 @@
 # Builds the release zip players install: dist\<release name>.zip (Plugin.ReleaseName, spaces -> dashes:
 # SplitBonk-V1.0-Alpha.zip).
 # Contents: the BepInEx loader (winhttp.dll, doorstop_config.ini, .doorstop_version, dotnet\, BepInEx\core\) copied from
-# the game folder (read only - nothing there is changed), an empty BepInEx\plugins and the mod's DLL, plus README.txt.
-# Left out: BepInEx\cache, interop, unity-libs, config (made on each player's first start), logs, the mod's test and
-# dump files, and every file of the game itself.
+# the game folder (read only - nothing there is changed), an empty BepInEx\plugins and the mod's DLL, plus README.txt,
+# and BepInEx\config\BepInEx.cfg from release\ with only the console switched off (1.0.1: without it BepInEx made its
+# default config on the first start - console on - and Steam Input then turned the pads into keyboard/mouse input).
+# Left out: BepInEx\cache, interop, unity-libs, the rest of config (made on each player's first start), logs, the mod's
+# test and dump files, and every file of the game itself.
 #   powershell -ExecutionPolicy Bypass -File tools\make_release.ps1 [-Config Release]
 param(
     [string]$GameDir = "H:\SteamLibrary\steamapps\common\Megabonk",
@@ -27,6 +29,8 @@ foreach ($f in "winhttp.dll", "doorstop_config.ini", ".doorstop_version") { Copy
 Copy-Item (Join-Path $GameDir "dotnet") (Join-Path $stage "dotnet") -Recurse
 New-Item -ItemType Directory -Force (Join-Path $stage "BepInEx") | Out-Null
 Copy-Item (Join-Path $GameDir "BepInEx\core") (Join-Path $stage "BepInEx\core") -Recurse
+New-Item -ItemType Directory -Force (Join-Path $stage "BepInEx\config") | Out-Null
+Copy-Item (Join-Path $root "release\BepInEx.cfg") (Join-Path $stage "BepInEx\config\BepInEx.cfg")
 $plug = Join-Path $stage "BepInEx\plugins\MegabonkSplitscreen"
 New-Item -ItemType Directory -Force $plug | Out-Null
 Copy-Item $dll $plug
@@ -56,7 +60,16 @@ Remove-Item $stage -Recurse -Force
 $z = [System.IO.Compression.ZipFile]::OpenRead($zip)
 $files = $z.Entries.Count
 $top = $z.Entries | ForEach-Object { ($_.FullName -split '[\\/]')[0] } | Sort-Object -Unique
+# The console must be off in the shipped config (see the top of this file)
+$cfgEntry = $z.Entries | Where-Object { $_.FullName -eq "BepInEx/config/BepInEx.cfg" }
+$cfgOk = $false
+if ($cfgEntry) {
+    $r = New-Object System.IO.StreamReader($cfgEntry.Open()); $text = $r.ReadToEnd(); $r.Close()
+    $section = ($text -split '(?m)^\[')  | Where-Object { $_ -like 'Logging.Console]*' } | Select-Object -First 1
+    $cfgOk = $section -and ($section -split "`r?`n" | Where-Object { $_.Trim() -eq 'Enabled = false' })
+}
 $z.Dispose()
+if (-not $cfgOk) { throw "The zip has no BepInEx/config/BepInEx.cfg with the console off" }
 Write-Output "Made $zip ($([math]::Round((Get-Item $zip).Length / 1MB, 1)) MB, $files files)"
 Write-Output "Top level: $($top -join ', ')"
 Write-Output "$release (mod $version), BepInEx $bepVersion, Doorstop $doorstop"

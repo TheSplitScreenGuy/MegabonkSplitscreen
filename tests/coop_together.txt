@@ -1,0 +1,54 @@
+# Real co-op play (players' reports: P2 can't grab XP; P2 shoots P1's way; knockback into P2): both players together
+# (6 m apart) walk the same route for ~90 s with the game's own enemy spawns, level-ups auto-picked. XP should rise
+# for both at a similar rate; knockback near P2 checked over the whole run.
+chars Fox Fox
+godp1
+godp2
+xp on
+autopick
+wait 2
+open
+wait 1
+clearloot
+place 6
+wait 1
+knock reset
+kills reset
+xpstate start
+go p1 1 0
+go p2 1 0
+wait 10
+go p1 0 1
+go p2 0 1
+wait 10
+go p1 -1 0
+go p2 -1 0
+wait 10
+xpstate after 30 s
+knock after 30 s
+go p1 0 -1
+go p2 0 -1
+wait 10
+go p1 1 1
+go p2 1 1
+wait 10
+go p1 -1 -1
+go p2 -1 -1
+wait 10
+xpstate after 60 s
+knock after 60 s
+go p1 1 0
+go p2 1 0
+wait 10
+go p1 0 1
+go p2 0 1
+wait 10
+go p1 -1 0
+go p2 -1 0
+wait 10
+xpstate after 90 s
+knock after 90 s
+stop p1
+stop p2
+shot coop_end
+quit

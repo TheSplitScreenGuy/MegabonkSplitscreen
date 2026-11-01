@@ -1,0 +1,273 @@
+# Players' report: P2 shoots where P1 aims / at P1's target; knockback pushes enemies into P2.
+# P1 has no weapon; players ~300 m apart ('home 300'). 4 skeletons behind P1, a ring of 6 around P2 (so some come
+# from P1's side - a push 'away from P1' then points into P2). Weapons given 4 times (levelled: more projectiles).
+# Damage on P2's ring = P2 aims right; damage on P1's group = P2 hits P1's side. 'knock' = push directions near P2.
+chars Monke Monke
+godp1
+godp2
+nopowerups
+wait 2
+open
+wait 1
+home 300
+clearloot
+wait 1
+unweapon p1 all
+unweapon p2 all
+wait 1
+clear
+home
+weapon p2 Frostwalker
+weapon p2 Frostwalker
+weapon p2 Frostwalker
+weapon p2 Frostwalker
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Frostwalker
+wait 3
+dmg Frostwalker
+knock Frostwalker
+unweapon p2 Frostwalker
+clear
+home
+weapon p2 SpaceNoodle
+weapon p2 SpaceNoodle
+weapon p2 SpaceNoodle
+weapon p2 SpaceNoodle
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_SpaceNoodle
+wait 3
+dmg SpaceNoodle
+knock SpaceNoodle
+unweapon p2 SpaceNoodle
+clear
+home
+weapon p2 DragonsBreath
+weapon p2 DragonsBreath
+weapon p2 DragonsBreath
+weapon p2 DragonsBreath
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_DragonsBreath
+wait 3
+dmg DragonsBreath
+knock DragonsBreath
+unweapon p2 DragonsBreath
+clear
+home
+weapon p2 Chunkers
+weapon p2 Chunkers
+weapon p2 Chunkers
+weapon p2 Chunkers
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Chunkers
+wait 3
+dmg Chunkers
+knock Chunkers
+unweapon p2 Chunkers
+clear
+home
+weapon p2 Mine
+weapon p2 Mine
+weapon p2 Mine
+weapon p2 Mine
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Mine
+wait 3
+dmg Mine
+knock Mine
+unweapon p2 Mine
+clear
+home
+weapon p2 PoisonFlask
+weapon p2 PoisonFlask
+weapon p2 PoisonFlask
+weapon p2 PoisonFlask
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_PoisonFlask
+wait 3
+dmg PoisonFlask
+knock PoisonFlask
+unweapon p2 PoisonFlask
+clear
+home
+weapon p2 BlackHole
+weapon p2 BlackHole
+weapon p2 BlackHole
+weapon p2 BlackHole
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_BlackHole
+wait 3
+dmg BlackHole
+knock BlackHole
+unweapon p2 BlackHole
+clear
+home
+weapon p2 Katana
+weapon p2 Katana
+weapon p2 Katana
+weapon p2 Katana
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Katana
+wait 3
+dmg Katana
+knock Katana
+unweapon p2 Katana
+clear
+home
+weapon p2 BloodMagic
+weapon p2 BloodMagic
+weapon p2 BloodMagic
+weapon p2 BloodMagic
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_BloodMagic
+wait 3
+dmg BloodMagic
+knock BloodMagic
+unweapon p2 BloodMagic
+clear
+home
+weapon p2 BluetoothDagger
+weapon p2 BluetoothDagger
+weapon p2 BluetoothDagger
+weapon p2 BluetoothDagger
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_BluetoothDagger
+wait 3
+dmg BluetoothDagger
+knock BluetoothDagger
+unweapon p2 BluetoothDagger
+clear
+home
+weapon p2 Dice
+weapon p2 Dice
+weapon p2 Dice
+weapon p2 Dice
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Dice
+wait 3
+dmg Dice
+knock Dice
+unweapon p2 Dice
+clear
+home
+weapon p2 HeroSword
+weapon p2 HeroSword
+weapon p2 HeroSword
+weapon p2 HeroSword
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_HeroSword
+wait 3
+dmg HeroSword
+knock HeroSword
+unweapon p2 HeroSword
+clear
+home
+weapon p2 CorruptSword
+weapon p2 CorruptSword
+weapon p2 CorruptSword
+weapon p2 CorruptSword
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_CorruptSword
+wait 3
+dmg CorruptSword
+knock CorruptSword
+unweapon p2 CorruptSword
+clear
+home
+weapon p2 Shotgun
+weapon p2 Shotgun
+weapon p2 Shotgun
+weapon p2 Shotgun
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Shotgun
+wait 3
+dmg Shotgun
+knock Shotgun
+unweapon p2 Shotgun
+clear
+home
+weapon p2 Scythe
+weapon p2 Scythe
+weapon p2 Scythe
+weapon p2 Scythe
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Scythe
+wait 3
+dmg Scythe
+knock Scythe
+unweapon p2 Scythe
+quit

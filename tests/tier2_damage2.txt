@@ -1,0 +1,47 @@
+# Players' report: at tier 2 P2 took no damage from mobs. P2 with test health (1,000,000 HP - hits still count down),
+# the same 4 skeletons 3 m around P2 on stage 1 and on stage 2 (after the exit portal); HP lost compared.
+chars Fox Monke tier 2
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+wait 1
+unweapon p2 all
+health stage 1 start
+spawn p2 Skeleton 4 3
+wait 6
+health stage 1 after 6 s of skeletons
+shot t2_stage1
+clear
+toportal p1
+wait 1
+p1interact
+wait 4
+killbosses
+wait 3
+toportal p1 far
+wait 1
+toportal p1
+wait 1
+p1interact
+wait 4
+stagestate
+wait 10
+stagestate
+wait 6
+stagestate
+clear
+clearloot
+unweapon p2 all
+health stage 2 start
+spawn p2 Skeleton 4 3
+wait 6
+health stage 2 after 6 s of skeletons
+shot t2_stage2
+spawn p2 Skeleton 4 3
+wait 6
+health stage 2 after 12 s
+quit

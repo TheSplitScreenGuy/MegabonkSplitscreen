@@ -1,0 +1,29 @@
+# heart_p1full part A again, with the heart's position and state logged: P1 full HP, P2 hurt, ~300 m apart, heart 7 m
+# ahead of P2, P2 walks over it. (Part B - heart 2 m from P2 - healed P2 103 -> 140.)
+chars Megachad Ogre
+wait 2
+open
+wait 1
+home 300
+clearloot
+clear
+wait 1
+hurt p2 40
+health A: P1 full, P2 hurt
+stat p2 PickupRange
+pickup p2 Health 1 7
+pickupsnear p2
+wait 0.5
+pickupsnear p2
+go p2 0 1
+wait 0.6
+pickupsnear p2
+wait 0.6
+pickupsnear p2
+wait 1.3
+stop p2
+wait 1
+pickupsnear p2
+health A: after P2 walked over the heart
+shot heart_a
+quit

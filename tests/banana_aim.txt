@@ -1,0 +1,116 @@
+# User: P2's banana doesn't fly at the nearest enemy. The game works out the banana's startDirection/movementVelocity
+# from P1's position; Reaim didn't update them. P1 unarmed, ~300 m apart, 3 skeletons 9 m from P2 beside (90), towards
+# P1 (180) and behind (0); each with the fix off, then on. 'banana' = outward banana heading vs the nearest enemy.
+chars Monke Monke
+godp1
+godp2
+nopowerups
+wait 2
+open
+wait 1
+home 300
+clearloot
+wait 1
+unweapon p1 all
+wait 1
+bananafix off
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 3 9 90
+wait 0.5
+bananaprobe (discard)
+wait 3
+shot banana_off_beside
+wait 3
+bananaprobe fix off, enemies at 90 deg
+dmg fix off, enemies at 90 deg
+bananafix on
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 3 9 90
+wait 0.5
+bananaprobe (discard)
+wait 3
+shot banana_on_beside
+wait 3
+bananaprobe fix on, enemies at 90 deg
+dmg fix on, enemies at 90 deg
+bananafix off
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 3 9 180
+wait 0.5
+bananaprobe (discard)
+wait 3
+wait 3
+bananaprobe fix off, enemies at 180 deg
+dmg fix off, enemies at 180 deg
+bananafix on
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 3 9 180
+wait 0.5
+bananaprobe (discard)
+wait 3
+wait 3
+bananaprobe fix on, enemies at 180 deg
+dmg fix on, enemies at 180 deg
+bananafix off
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 3 9 0
+wait 0.5
+bananaprobe (discard)
+wait 3
+wait 3
+bananaprobe fix off, enemies at 0 deg
+dmg fix off, enemies at 0 deg
+bananafix on
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 3 9 0
+wait 0.5
+bananaprobe (discard)
+wait 3
+wait 3
+bananaprobe fix on, enemies at 0 deg
+dmg fix on, enemies at 0 deg
+# levelled: several bananas a throw
+weapon p2 Bananarang
+weapon p2 Bananarang
+weapon p2 Bananarang
+bananafix off
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 4 9 90
+wait 0.5
+bananaprobe (discard)
+wait 6
+bananaprobe level 4, fix off
+dmg level 4, fix off
+bananafix on
+clear
+home
+wait 1
+dmg reset
+spawnside p2 Skeleton 4 9 90
+wait 0.5
+bananaprobe (discard)
+wait 6
+bananaprobe level 4, fix on
+dmg level 4, fix on
+quit

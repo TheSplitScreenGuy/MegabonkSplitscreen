@@ -2,6 +2,74 @@
 
 Goal: 2-player local splitscreen for Megabonk (single-player Unity game).
 
+## After the 1.0 alpha release: players' reports (2026-11-01)
+Reports (characters unknown): (1) P2 fires at P1's target / in P1's direction; (2) knockback reversed - enemies
+knocked into P2; (3) P2 can't grab pick-ups or XP; (4) P2 can't take the heart power-up; (5) at tier 2, P2 took no
+damage from mobs. User: test every character and every projectile weapon; players far apart (~300 m) in tests.
+- New autotest commands: `spawnside <p> <EEnemy> <n> <dist>` (arc behind a player, away from the other), `knock`
+  (knockback directions near P2), `xpstate`, `unweapon <p> all`, `home <metres>` (open flat ground that far away),
+  `godp1/godp2 off`, `health <label>`. Tests: aim_sides1/2 (30 weapons), aim_fix4, pickups_real, tier2_damage,
+  charcheck_<P1>_<P2> (11 pairs = all 21 characters).
+- (1) AIM, reproduced and FIXED: sweep with P1 unarmed, ~350 m apart, ring of 6 skeletons around P2, weapons x4 levels:
+  26 of 30 weapons clean (0 damage at P1). Bugs: Hero Sword (38 dmg on P1's group) and Corrupt Sword (39) - their
+  hitbox lives in their own fields (hitboxPos, movingProjectilePosition) worked out from "the player" at the start,
+  so moving the slash object didn't move it; Space Noodle (50 dmg, 1 kill at P1) - LaserBeamAttack builds its damage
+  box (center/rotation/halfExtents) in FixedUpdate from "the player", only GetBeamStart was moved; Bluetooth Dagger
+  (0 damage anywhere at 370 m; fine at 30 m) - moves/hits relative to "the player". Fix (P2Weapons.ZoneHook): those
+  methods run with P2 as the player (the shotgun/axe/banana pattern). aim_fix4: P1's group 0 for all four, both
+  players armed still both deal damage. Guard: a zone is only added to a hook on the same family (one native
+  function was shared with the empty PlayerMovement.Update).
+- (2) KNOCKBACK, reproduced and FIXED (Knockback.cs): the game pushes a hit enemy away from "the player" (P1). With
+  enemies around P2 (not only behind it), 2-6 pushes per weapon pointed into P2 (Sword, Axe, Tornado, Dexecutioner,
+  Mine, Dice, Katana, Scythe...). Prefix on EnemyMovementRb.Knockback(DamageContainer / Vector3, float): an enemy
+  nearer P2, P2's hit (P2Items.CurrentHitter, or no projectile), push lined up with "away from P1" -> turned to point
+  away from P2. Sweep: "towards P2 after the mod" 0 for every weapon. Not changed: the returning banana pushes
+  along its flight (also P1's behaviour); Space Noodle 3 pushes into P2 remain (laser, along the beam?) - open.
+- (3) PICKUPS/XP, two causes found and FIXED (P2Pickups):
+  a) P2's radius = P1's sphere measured once when P2 spawned x P2's / P1's CURRENT PickupRange (PickupRange is the
+     radius in metres: Fox 9, Calcium 8). P1 + 5 Attraction tomes = 42.75 -> P2's radius would be 1.9 m. Now P1's
+     sphere is read live (pickup_range: P2 still pulls a gem 6 m away after P1's tomes).
+  b) players together: P1's sphere is a trigger (instant), P2's pull runs every 0.1 s - pickup_close baseline (4 m
+     apart, 6 gems in a 3 m ring around P2): P1 got all 6, P2 0. Now a gem the game sends to P1 that is nearer P2 and
+     inside P2's radius goes to P2 (not during P1's pull-all: magnet/shrine gems stay P1's - user's rule).
+  Far apart, P2's own kills and walked-over gems were fine in every charcheck so far.
+- (4) HEART, reproduced and FIXED: the game's Pickup.CanPickup for the heart asks "is THE player (P1) hurt?" - with P1
+  at full HP P2 never got a heart (charcheck Megachad/Ogre: P2 102/140 walked over it, nothing; Fox/Calcium and
+  SirOofie/Cl4nk healed because P1 was 1 HP short). P2CanTake: the heart asks about P2's HP, other pickups keep the
+  game's check. VERIFIED heart_a: P1 120/120, P2 102/140 walks to a heart 7 m away (Ogre's PickupRange is only 5) -
+  it flies to P2, P2 140/140. (Pitfall: 'nopowerups' in a script switches dropped hearts off after 0.5 s - the first
+  heart_p1full run looked like a failure because of it; heart tests must not use it.)
+- (5) TIER 2 DAMAGE: not reproduced. tier2_damage2 (P2 test health, 4 skeletons 3 m around P2): stage 1 -299 HP in
+  6 s, stage 2 (after P1 took the exit portal) -985 in 6 s, -1217 in the next 6 s; tier2_damage without test health:
+  P2 died on both stages. tier2_p2portal_damage (P2 levels up, takes the portal itself): stage 2 -1101 in 6 s.
+  tier2_hud (normal HP): 2 skeletons kill P2 in 3 s on stage 1 and on stage 2. Still not reproduced after 4 routes -
+  needs details from the players (character, P2 down before the portal?, merged/split view, what "no damage" looked like).
+- Character sweep DONE (charcheck_*, all 21 characters, both armed, ~300 m apart): XP from own kills and walked-over
+  gems, heart heals (with P1 hurt) for every character; aim/knockback clean. Low P2/P1 damage ratios (Vlad 0.47, Bush
+  0.48) were the starting weapons: Vlad vs Vlad 1.76, Bush vs Bush 1.00. Tony McZoom's Bluetooth Dagger pushes along
+  its flight (any direction for both players) - game behaviour, not P1-relative.
+- Regression: aim_sides2 after the fixes - P1's group 0 for all 15 weapons, "towards P2 after the mod" 0 everywhere
+  (Space Noodle 27 -> 72 on P2's ring, Bluetooth Dagger 0 -> 49).
+- Co-op: coop_still (6 m apart, still, 90 s, the game's spawns): kills P1 37 / P2 46, XP 11 / 18 - balanced.
+  coop_together (walking a route) skewed (P1 72 kills / P2 20) because the route ran into the map-edge walls - redo
+  on open ground if needed.
+- BANANA (user's play-test, P2 Megachad with a picked-up Bananarang: "doesn't fly at the nearest enemy"), FIXED:
+  P2's banana is set up at P1's spot; its TryInit works out startDirection from there (towards a target near P2 - at
+  300 m apart that's the P1 -> P2 line: field probe start (-0.71, 0, -0.70) = P1->P2 exactly); the re-aim afterwards
+  didn't stick and the ring sweeps couldn't see it (a ring is hit whichever way it flies). Fix: P2's banana is moved
+  to P2 right before its TryInit (MoveBananaBeforeInit, Priority.First), then TryInit / FindMovementDirection run with
+  P2 as the player (zone). Zone on TryInit alone made some throws fail (banana at P1, "player" at P2). Probe
+  (banana_aim / banana_megachad, flight in the first 0.3 s vs the nearest enemy): fix off 56-141 deg mean, 0-50% within
+  30 deg; fix on 1-37 deg, 67-100%. banana_both: P1's bananas still hit P1's ring. TEMP: 'bananafix off|on' switch,
+  'bananaprobe', [bananafields] (autotest only).
+- User's play-test log (P2 Megachad, real pads): P2 reached level 11 - XP works in play. Warnings only the known ones.
+- Not changed: version number (still 1.0.0-alpha), release zip, commits - waiting for the user.
+- BepInEx console came back on the user's PC (BepInEx.cfg [Logging.Console] Enabled = true - BepInEx's default when it
+  makes a new config). The 1.0 alpha zip shipped NO BepInEx.cfg, so every player started with the console on (and
+  Steam Input could then hide P2's pad). Fixed for the next release: release\BepInEx.cfg (only the console setting,
+  off) goes into the zip as BepInEx\config\BepInEx.cfg; make_release.ps1 refuses to finish without it; both READMEs say
+  how to switch it off by hand. User's own BepInEx.cfg set back to off (user approved).
+
 ## Current step
 - [x] Locate game folder, check backend (Mono or IL2CPP) and Unity version
 - [x] .NET 8 SDK 8.0.426 installed by user (2026-10-17)

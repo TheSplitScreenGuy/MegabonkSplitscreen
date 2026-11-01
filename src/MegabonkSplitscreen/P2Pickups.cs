@@ -24,7 +24,8 @@ internal static class P2Pickups
 
     private static GameObject body;
     private static float nextAttract;
-    private static float radius = -1f;
+    private static float radius = -1f;          // P1's sphere when P2 spawned (fallback if the sphere is gone)
+    private static SphereCollider p1Sphere;     // P1's pickup sphere, read live
     private static readonly Dictionary<IntPtr, Pickup> p2Gems = new();
     private static bool applyingForP2;
     private static int pendingValue;
@@ -93,6 +94,7 @@ internal static class P2Pickups
         p2Gems.Clear();
         var dp = Object.FindObjectOfType<DetectPickups>();
         var sc = dp != null ? dp.collider : null;
+        p1Sphere = sc;
         radius = sc != null ? sc.radius * Mathf.Max(sc.transform.lossyScale.x, 0.01f) : 4f;
         ModLog.Info($"P2 pickup radius {radius:F1} (P1's sphere {(sc != null ? "found" : "not found, default")})");
     }
@@ -138,14 +140,18 @@ internal static class P2Pickups
     {
         var pm = PickupManager.Instance;
         if (pm == null) return;
-        // P1's sphere grows with P1's PickupRange stat: P2's radius = the same sphere scaled by P2's / P1's PickupRange
-        // (user: every tome effect should work for P2 - the attraction tome)
-        float r = radius;
+        // P1's sphere grows with P1's PickupRange stat (DetectPickups.UpdateRadius): P2's radius = P1's sphere NOW scaled
+        // by P2's / P1's PickupRange (user: every tome effect should work for P2 - the attraction tome).
+        // 1.0 alpha+ (players: "P2 can't grab pick-ups or XP"): the sphere was measured once, when P2 spawned, then divided
+        // by P1's CURRENT range - each pickup-range upgrade of P1's shrank P2's radius (P1 x3 range = P2 a third).
+        float sphere = p1Sphere != null ? p1Sphere.radius * Mathf.Max(p1Sphere.transform.lossyScale.x, 0.01f) : radius;
+        float r = sphere;
         var p1Stats = Assets.Scripts.Actors.Player.MyPlayer.Instance?.inventory?.playerStats;
         float p1Range = p1Stats != null && !P2Inventory.InP2Context ? p1Stats.GetStat(Assets.Scripts.Menu.Shop.EStat.PickupRange) : 0f;
         float p2Range = P2Inventory.Get(Assets.Scripts.Menu.Shop.EStat.PickupRange);
-        if (p1Range > 0.01f && p2Range > 0.01f) r = radius * p2Range / p1Range;
-        if (rangeLogs < 3 && Mathf.Abs(r - lastLoggedRange) > 0.5f) { rangeLogs++; lastLoggedRange = r; ModLog.Info($"P2 pickup radius {r:F1} (P1's sphere {radius:F1}, PickupRange P1 {p1Range:F2} / P2 {p2Range:F2})"); }
+        if (p1Range > 0.01f && p2Range > 0.01f) r = sphere * p2Range / p1Range;
+        lastP2Radius = r;
+        if (rangeLogs < 3 && Mathf.Abs(r - lastLoggedRange) > 0.5f) { rangeLogs++; lastLoggedRange = r; ModLog.Info($"P2 pickup radius {r:F1} (P1's sphere now {sphere:F1}, PickupRange P1 {p1Range:F2} / P2 {p2Range:F2})"); }
         foreach (var col in Physics.OverlapSphere(p2, r, pm.whatIsPickups.value, QueryTriggerInteraction.Collide))
         {
             if (col == null) continue;
@@ -160,7 +166,7 @@ internal static class P2Pickups
             }
             // XP gems and gold coins (user: separate gold per player)
             // (v0.44.1: power-ups too - user: P2 should collect the heart, magnet, clock...)
-            if (p == null || (p.ePickup != EPickup.Xp && p.ePickup != EPickup.Gold && !P2PowerUps.IsPowerUp(p.ePickup)) || p.pickedUp || p.target != null || !p.CanPickup()) continue;
+            if (p == null || !Collectable(p) || p.pickedUp || p.target != null || !P2CanTake(p)) continue;
             p2Gems[p.Pointer] = p;
             p.StartFollowingPlayer(body.transform);
             P2Items.ArmXpOrb(p);
@@ -209,23 +215,40 @@ internal static class P2Pickups
             if (Time.time <= s.until && (s.pos - p).sqrMagnitude <= PotDropRadius * PotDropRadius) return true;
         return false;
     }
-    private static void BeforePullAll(out bool __state)
+    // __state: 1 = P2's pull, 2 = P1's (P1's magnet / shrine: those gems stay P1's - user: whoever takes the magnet gets all)
+    private static int p1PullDepth;
+    private static void BeforePullAll(out int __state)
     {
-        __state = body != null && Time.time < pullUntil;
-        if (!__state) return;
+        bool p2s = body != null && Time.time < pullUntil;
+        if (!p2s) { __state = 2; p1PullDepth++; return; }
+        __state = 1;
         pullDepth++;
         pulled = 0;
         pullUntil = -1f;
     }
 
-    private static Exception AfterPullAll(Exception __exception, bool __state)
+    private static Exception AfterPullAll(Exception __exception, int __state)
     {
-        if (__state)
+        if (__state == 1)
         {
             pullDepth--;
             ModLog.Info($"[succ] pull-all-XP for P2: {pulled} gems sent to P2");
         }
+        else if (__state == 2 && p1PullDepth > 0) p1PullDepth--;
         return __exception;
+    }
+
+    // P2's pickup radius as last worked out (Attract)
+    private static float lastP2Radius = -1f;
+    private static bool Collectable(Pickup p) => p.ePickup == EPickup.Xp || p.ePickup == EPickup.Gold || P2PowerUps.IsPowerUp(p.ePickup);
+
+    // Can P2 take this pickup now? The game's CanPickup asks about "the player" (P1): for the heart that's "is P1 hurt?" -
+    // 1.0 alpha+ (players: P2 couldn't take the heart; charcheck Megachad/Ogre: P2 at 102/140 walked over a heart while
+    // P1 was at full HP, nothing happened) - so the heart asks about P2's health; every other pickup keeps the game's check
+    private static bool P2CanTake(Pickup p)
+    {
+        if (p.ePickup == EPickup.Health) return !P2Health.IsDead && P2Health.Hp < P2Health.MaxHp;
+        return p.CanPickup();
     }
 
     private static bool BeforeFollow(Pickup __instance, ref Transform target)
@@ -251,6 +274,25 @@ internal static class P2Pickups
         // A gem already flying to P2 stays P2's
         if (body != null && p2Gems.ContainsKey(__instance.Pointer) && target != null && target.Pointer != body.transform.Pointer)
             return false;
+        // 1.0 alpha+ (players: "P2 can't grab pick-ups or XP"): P1's pickup sphere is a trigger that takes a gem the moment
+        // it touches it, while P2's pull runs every 0.1 s - with the players together P1 won nearly every gem, even ones
+        // lying nearer P2. A gem the game sends to P1 that is nearer P2 and inside P2's radius goes to P2 (not during
+        // P1's pull-all: magnet/shrine gems stay P1's)
+        var p1 = MyPlayer.Instance;
+        if (body != null && p1 != null && __instance != null && target != null && target.Pointer != body.transform.Pointer
+            && p1PullDepth == 0 && lastP2Radius > 0f && !P2Health.IsDead && !__instance.pickedUp && Collectable(__instance) && P2CanTake(__instance))
+        {
+            Vector3 g = __instance.transform.position, b = body.transform.position + Vector3.up;
+            float toP2 = (g - b).sqrMagnitude;
+            if (toP2 <= lastP2Radius * lastP2Radius && toP2 < (g - p1.transform.position).sqrMagnitude)
+            {
+                target = body.transform;
+                p2Gems[__instance.Pointer] = __instance;
+                P2Items.ArmXpOrb(__instance);
+                if (nearerLogs++ < 5) ModLog.Info($"P2 takes a {__instance.ePickup} the game sent to P1 (nearer P2: {Mathf.Sqrt(toP2):F1} m)");
+                return true;
+            }
+        }
         // Pooled gems: a gem going to P1 is no longer P2's
         if (body == null || target == null || target.Pointer != body.transform.Pointer) p2Gems.Remove(__instance.Pointer);
         return true;
@@ -263,7 +305,7 @@ internal static class P2Pickups
     private static float p1LeftOverBefore;
     private static int restoreLogs;
 
-    private static int goldSeenLogs, changeLogs, rangeLogs, moneyErrors;
+    private static int goldSeenLogs, changeLogs, rangeLogs, moneyErrors, nearerLogs;
     private static float lastLoggedRange = -1f;
     private static float p2XpLeftOver;
     private static int xpMultLogs;

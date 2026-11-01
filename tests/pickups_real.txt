@@ -1,0 +1,66 @@
+# Players' report: P2 can't grab pick-ups or XP; P2 can't take the heart power-up. Real play, not drops at the feet:
+# each player kills skeletons around them (gems drop where they die), walks over the spot, then walks into a heart
+# 7 m away (outside the pickup radius). Players ~300 m apart; P1 does the same as the reference. No god mode (heals show).
+chars Fox Fox
+xp on
+autopick
+wait 2
+open
+wait 1
+home 300
+clearloot
+wait 1
+xpstate start
+spawnside p1 Skeleton 6 6
+spawnside p2 Skeleton 6 6
+wait 8
+xpstate after kills
+gems after kills
+shot pk_kills
+go p1 1 0
+go p2 1 0
+wait 1.5
+go p1 -1 0
+go p2 -1 0
+wait 3
+go p1 0 1
+go p2 0 1
+wait 1.5
+stop p1
+stop p2
+wait 1
+xpstate after walking
+gems after walking
+home
+clear
+wait 1
+hurt p1 50
+hurt p2 50
+health hurt
+pickup p1 Health 1 7
+pickup p2 Health 1 7
+wait 1
+shot pk_heart_before
+health heart dropped
+go p1 0 1
+go p2 0 1
+wait 2.5
+stop p1
+stop p2
+wait 1
+shot pk_heart_after
+health heart walked over
+home
+clear
+pickup p1 Xp 1 7
+pickup p2 Xp 1 7
+wait 0.5
+xpstate before gem walk
+go p1 0 1
+go p2 0 1
+wait 2.5
+stop p1
+stop p2
+wait 1
+xpstate after gem walk
+quit

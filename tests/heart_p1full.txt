@@ -1,0 +1,30 @@
+# Players' report: P2 couldn't take the heart. Found: the game's CanPickup asks "is THE player (P1) hurt?" - with P1 at
+# full HP no heart ever went to P2 (charcheck Megachad/Ogre). A: ~300 m apart, P1 full, P2 hurt, heart 7 m ahead of P2.
+# B: players 4 m apart, P2 full, P1 hurt, heart between them nearer P2 - must stay for P1 (P2 doesn't need it).
+chars Megachad Ogre
+wait 2
+open
+wait 1
+home 300
+clearloot
+clear
+wait 1
+hurt p2 40
+health A: P1 full, P2 hurt
+pickup p2 Health 1 7
+wait 0.5
+go p2 0 1
+wait 2.5
+stop p2
+wait 1
+health A: after P2 walked over the heart
+shot heart_a
+clear
+place 4
+wait 1
+hurt p1 40
+health B: P1 hurt, P2 full
+pickup p2 Health 1 2
+wait 3
+health B: heart 2 m from P2 (P2 full)
+quit

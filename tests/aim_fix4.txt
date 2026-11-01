@@ -1,0 +1,144 @@
+# Fix check: P2's Hero Sword / Corrupt Sword / Space Noodle hit enemies at P1, P2's Bluetooth Dagger hit nothing.
+# Players ~300 m apart. A: P1 unarmed (P1's group must take 0). B: both armed with it (P1's must still work).
+chars Monke Monke
+godp1
+godp2
+nopowerups
+wait 2
+open
+wait 1
+home 300
+clearloot
+wait 1
+unweapon p1 all
+unweapon p2 all
+wait 1
+clear
+home
+weapon p2 HeroSword
+weapon p2 HeroSword
+weapon p2 HeroSword
+weapon p2 HeroSword
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot fixA_HeroSword
+wait 4
+dmg A HeroSword (P1 unarmed)
+knock A HeroSword
+clear
+home
+weapon p1 HeroSword
+weapon p1 HeroSword
+weapon p1 HeroSword
+weapon p1 HeroSword
+wait 1
+dmg reset
+spawn p1 Skeleton 6 7
+spawn p2 Skeleton 6 7
+wait 3
+shot fixB_HeroSword
+wait 4
+dmg B HeroSword (both armed)
+unweapon p1 HeroSword
+unweapon p2 HeroSword
+clear
+home
+weapon p2 CorruptSword
+weapon p2 CorruptSword
+weapon p2 CorruptSword
+weapon p2 CorruptSword
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot fixA_CorruptSword
+wait 4
+dmg A CorruptSword (P1 unarmed)
+knock A CorruptSword
+clear
+home
+weapon p1 CorruptSword
+weapon p1 CorruptSword
+weapon p1 CorruptSword
+weapon p1 CorruptSword
+wait 1
+dmg reset
+spawn p1 Skeleton 6 7
+spawn p2 Skeleton 6 7
+wait 3
+shot fixB_CorruptSword
+wait 4
+dmg B CorruptSword (both armed)
+unweapon p1 CorruptSword
+unweapon p2 CorruptSword
+clear
+home
+weapon p2 SpaceNoodle
+weapon p2 SpaceNoodle
+weapon p2 SpaceNoodle
+weapon p2 SpaceNoodle
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot fixA_SpaceNoodle
+wait 4
+dmg A SpaceNoodle (P1 unarmed)
+knock A SpaceNoodle
+clear
+home
+weapon p1 SpaceNoodle
+weapon p1 SpaceNoodle
+weapon p1 SpaceNoodle
+weapon p1 SpaceNoodle
+wait 1
+dmg reset
+spawn p1 Skeleton 6 7
+spawn p2 Skeleton 6 7
+wait 3
+shot fixB_SpaceNoodle
+wait 4
+dmg B SpaceNoodle (both armed)
+unweapon p1 SpaceNoodle
+unweapon p2 SpaceNoodle
+clear
+home
+weapon p2 BluetoothDagger
+weapon p2 BluetoothDagger
+weapon p2 BluetoothDagger
+weapon p2 BluetoothDagger
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot fixA_BluetoothDagger
+wait 4
+dmg A BluetoothDagger (P1 unarmed)
+knock A BluetoothDagger
+clear
+home
+weapon p1 BluetoothDagger
+weapon p1 BluetoothDagger
+weapon p1 BluetoothDagger
+weapon p1 BluetoothDagger
+wait 1
+dmg reset
+spawn p1 Skeleton 6 7
+spawn p2 Skeleton 6 7
+wait 3
+shot fixB_BluetoothDagger
+wait 4
+dmg B BluetoothDagger (both armed)
+unweapon p1 BluetoothDagger
+unweapon p2 BluetoothDagger
+quit

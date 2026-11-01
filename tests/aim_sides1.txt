@@ -1,0 +1,273 @@
+# Players' report: P2 shoots where P1 aims / at P1's target; knockback pushes enemies into P2.
+# P1 has no weapon; players ~300 m apart ('home 300'). 4 skeletons behind P1, a ring of 6 around P2 (so some come
+# from P1's side - a push 'away from P1' then points into P2). Weapons given 4 times (levelled: more projectiles).
+# Damage on P2's ring = P2 aims right; damage on P1's group = P2 hits P1's side. 'knock' = push directions near P2.
+chars Monke Monke
+godp1
+godp2
+nopowerups
+wait 2
+open
+wait 1
+home 300
+clearloot
+wait 1
+unweapon p1 all
+unweapon p2 all
+wait 1
+clear
+home
+weapon p2 FireStaff
+weapon p2 FireStaff
+weapon p2 FireStaff
+weapon p2 FireStaff
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_FireStaff
+wait 3
+dmg FireStaff
+knock FireStaff
+unweapon p2 FireStaff
+clear
+home
+weapon p2 Bone
+weapon p2 Bone
+weapon p2 Bone
+weapon p2 Bone
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Bone
+wait 3
+dmg Bone
+knock Bone
+unweapon p2 Bone
+clear
+home
+weapon p2 Sword
+weapon p2 Sword
+weapon p2 Sword
+weapon p2 Sword
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Sword
+wait 3
+dmg Sword
+knock Sword
+unweapon p2 Sword
+clear
+home
+weapon p2 Revolver
+weapon p2 Revolver
+weapon p2 Revolver
+weapon p2 Revolver
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Revolver
+wait 3
+dmg Revolver
+knock Revolver
+unweapon p2 Revolver
+clear
+home
+weapon p2 Aura
+weapon p2 Aura
+weapon p2 Aura
+weapon p2 Aura
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Aura
+wait 3
+dmg Aura
+knock Aura
+unweapon p2 Aura
+clear
+home
+weapon p2 Axe
+weapon p2 Axe
+weapon p2 Axe
+weapon p2 Axe
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Axe
+wait 3
+dmg Axe
+knock Axe
+unweapon p2 Axe
+clear
+home
+weapon p2 Bow
+weapon p2 Bow
+weapon p2 Bow
+weapon p2 Bow
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Bow
+wait 3
+dmg Bow
+knock Bow
+unweapon p2 Bow
+clear
+home
+weapon p2 Aegis
+weapon p2 Aegis
+weapon p2 Aegis
+weapon p2 Aegis
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Aegis
+wait 3
+dmg Aegis
+knock Aegis
+unweapon p2 Aegis
+clear
+home
+weapon p2 LightningStaff
+weapon p2 LightningStaff
+weapon p2 LightningStaff
+weapon p2 LightningStaff
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_LightningStaff
+wait 3
+dmg LightningStaff
+knock LightningStaff
+unweapon p2 LightningStaff
+clear
+home
+weapon p2 Flamewalker
+weapon p2 Flamewalker
+weapon p2 Flamewalker
+weapon p2 Flamewalker
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Flamewalker
+wait 3
+dmg Flamewalker
+knock Flamewalker
+unweapon p2 Flamewalker
+clear
+home
+weapon p2 Rockets
+weapon p2 Rockets
+weapon p2 Rockets
+weapon p2 Rockets
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Rockets
+wait 3
+dmg Rockets
+knock Rockets
+unweapon p2 Rockets
+clear
+home
+weapon p2 Bananarang
+weapon p2 Bananarang
+weapon p2 Bananarang
+weapon p2 Bananarang
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Bananarang
+wait 3
+dmg Bananarang
+knock Bananarang
+unweapon p2 Bananarang
+clear
+home
+weapon p2 Tornado
+weapon p2 Tornado
+weapon p2 Tornado
+weapon p2 Tornado
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Tornado
+wait 3
+dmg Tornado
+knock Tornado
+unweapon p2 Tornado
+clear
+home
+weapon p2 Dexecutioner
+weapon p2 Dexecutioner
+weapon p2 Dexecutioner
+weapon p2 Dexecutioner
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Dexecutioner
+wait 3
+dmg Dexecutioner
+knock Dexecutioner
+unweapon p2 Dexecutioner
+clear
+home
+weapon p2 Sniper
+weapon p2 Sniper
+weapon p2 Sniper
+weapon p2 Sniper
+wait 1
+dmg reset
+knock reset
+spawnside p1 Skeleton 4 8
+spawn p2 Skeleton 6 7
+wait 3
+shot aim_Sniper
+wait 3
+dmg Sniper
+knock Sniper
+unweapon p2 Sniper
+quit
