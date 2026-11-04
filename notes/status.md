@@ -35,6 +35,8 @@ Goal: 2-player local splitscreen for Megabonk (single-player Unity game).
   its FixedUpdate. FIXED (MapView): every 0.5 s FullMap.FixedUpdate + RevealFog run with P1's object and
   PlayerMovement.Instance at P2's spot (P2Items.AtP2Spot). Now P2 110 m -> 13 cells, P1 70 m -> 7; P1 not moved.
 - TEMP switches: 'fix chestmash|jumprelease|doors|shield|timefreeze|chestpay off', [queue] / [chestpay] logs.
+- RELEASE 1.0.3-alpha ("SplitBonk V1.0.3 Alpha"): the fixes above; dist\SplitBonk-V1.0.3-Alpha.zip by make_release.ps1
+  (231 files, 0 backslash names, console-off cfg, DLL = the build = installed); 1.0.2 zip moved to dist\old.
 
 ## After the 1.0 alpha release: players' reports (2026-11-01)
 Reports (characters unknown): (1) P2 fires at P1's target / in P1's direction; (2) knockback reversed - enemies
