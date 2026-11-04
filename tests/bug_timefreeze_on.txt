@@ -1,0 +1,29 @@
+chars Monke Fox
+# Time freeze, fix ON (bug_timefreeze.txt reproduces it with the fix off: P2 100 -> 0 in 4 s while frozen). P2 on
+# normal health with a ring of skeletons right on it during the freeze; then a baseline after the freeze (they must
+# hurt P2 again). P1 on test health (natural spawns near P1 don't matter here).
+wait 2
+godp1
+open
+clear
+clearloot
+home 300
+unweapon p2 all
+unweapon p1 all
+wait 1
+pickup p1 Time
+wait 1
+freeze on start
+spawn p2 Skeleton 6 1.5
+wait 1
+freeze on 1 s
+wait 3
+freeze on 4 s
+clear
+wait 12
+freeze baseline start
+spawn p2 Skeleton 6 1.5
+wait 3
+freeze baseline 3 s
+clear
+quit

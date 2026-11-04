@@ -1,0 +1,44 @@
+chars Monke Monke
+# Players' report (1.0.2): "executioner doesnt work on player 2". Both players with only the Dexecutioner, ~300 m
+# apart, the same ring of enemies around each: hits, executions (the game's isExecute / Execute damage effect) and the
+# execution chance of each player's Dexecutioner swings, damage and kills per player. The game's chance is 2% (too
+# rare to compare in a short test), so part 2 forces every swing's chance to 50% for both players.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 300
+unweapon p1 all
+unweapon p2 all
+wait 1
+weapon p1 Dexecutioner
+weapon p2 Dexecutioner
+wait 1
+wcompare Dexecutioner
+execs reset
+dmg reset
+kills reset
+spawn p1 GoblinTank 8 5
+spawn p2 GoblinTank 8 5
+wait 10
+execs game chance
+dmg game chance
+kills game chance
+clear
+wait 1
+# ---- part 2: 50% for both
+dexchance 0.5
+execs reset
+dmg reset
+kills reset
+spawn p1 GoblinTank 8 5
+spawn p2 GoblinTank 8 5
+wait 12
+execs forced 50%
+dmg forced 50%
+kills forced 50%
+shot dex_forced
+quit

@@ -1,0 +1,110 @@
+chars Monke Robinette
+# Gold fix check (chestpay ON): both players buy a chest in the same frame, 4 times. The game's charging with two
+# chests in flight varies (P1 paid both / P1 paid P2's / nobody paid); with the fix each charge must come out of the
+# buyer's own gold. goldwatch + [chestpay] log.
+wait 2
+godp2
+godp1
+open
+clear
+clearloot
+nopowerups
+home 300
+goldwatch on
+keepwindows
+givegold p1 600
+givegold p2 600
+gold before round 1
+chestprice
+chest p1
+chest p2
+wait 0.5
+p1interact
+p2interact
+wait 1.5
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 2
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 2
+chestwin
+gold after round 1
+chestprice
+gold before round 2
+chestprice
+chest p1
+chest p2
+wait 0.5
+p1interact
+p2interact
+wait 1.5
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 2
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 2
+chestwin
+gold after round 2
+chestprice
+gold before round 3
+chestprice
+chest p1
+chest p2
+wait 0.5
+p1interact
+p2interact
+wait 1.5
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 2
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 2
+chestwin
+gold after round 3
+chestprice
+gold before round 4
+chestprice
+chest p1
+chest p2
+wait 0.5
+p1interact
+p2interact
+wait 1.5
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 2
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 2
+chestwin
+gold after round 4
+chestprice
+quit
+

@@ -1,0 +1,96 @@
+chars Monke Fox map Graveyard
+# Players' reports (1.0.2) on the Halloween (Graveyard) map, stage 1: "if p1 or p2 dies ... u cant revive them as their
+# body will be impossible to reach, u also dont get revived if the other player goes through the door"; "if nobody dies
+# and u both make it through the door, p2 will float thousands of meters above the map indefinitely".
+# The run starts in a crypt ~2 km above the map; its leave door sends "the player" (P1) down to the map.
+# A (door fix OFF, like 1.0.2): nobody down, P1 then P2 use the leave door. B..D (fix ON), each in a new run (both
+# down -> the death screen's restart): B nobody down, P1 uses the door; C P2 down, P1 uses the door; D P1 down, P2 uses
+# the door. Expected with the fix: both players on the map next to each other, the downed one back.
+wait 3
+godp1
+godp2
+crypt
+# ---- A: fix off
+fix doors off
+tocrypt p1 leave
+wait 1
+p1interact
+wait 6
+crypt
+p2pos
+shot gy_A_p1_out
+tocrypt p2 leave
+wait 1
+p2interact
+wait 6
+p2pos
+crypt
+shot gy_A_p2_door
+wait 3
+p2pos
+kill p2
+wait 2
+kill p1
+wait 8
+restart
+wait 15
+# ---- B: fix on, nobody down
+fix doors on
+godp1
+godp2
+crypt
+tocrypt p1 leave
+wait 1
+p1interact
+wait 6
+crypt
+p2pos
+shot gy_B
+wait 3
+p2pos
+kill p2
+wait 2
+kill p1
+wait 8
+restart
+wait 15
+# ---- C: fix on, P2 down in the crypt, P1 uses the door
+godp1
+crypt
+kill p2
+wait 2
+downstate
+crypt
+tocrypt p1 leave
+wait 1
+p1interact
+wait 6
+downstate
+crypt
+p2pos
+shot gy_C
+wait 2
+godp2
+kill p2
+wait 2
+kill p1
+wait 8
+restart
+wait 15
+# ---- D: fix on, P1 down in the crypt, P2 uses the door
+godp2
+crypt
+kill p1
+wait 2
+downstate
+crypt
+tocrypt p2 leave
+wait 1
+p2interact
+wait 6
+downstate
+crypt
+p2pos
+shot gy_D
+wait 2
+quit

@@ -44,6 +44,7 @@ internal static class MapView
     private static bool wasOpen;
     private static int openLogs, p2ToggleLogs;
     private static float nextReveal;
+    private static int fogLogs;
 
     // TEMP [perf] ([perf] log: the map view took ~0.7 ms of every frame): time per part - 0 map lookups, 1 P2's
     // trigger, 2 panels, 3 hiding the game's window
@@ -130,7 +131,24 @@ internal static class MapView
         if (split && Time.time >= nextReveal)
         {
             nextReveal = Time.time + 0.5f;
-            try { map.QueueRevealFog(P2Weapons.Body.transform.position); } catch { }
+            // 1.0.2 (user: P2 doesn't uncover the fog; bug_fog_p2: P2 walked 80 m, 0 cells revealed - P1 13 for 110 m):
+            // QueueRevealFog(P2's spot) did nothing, also with RevealFog right after (the game reveals around "the player"
+            // in its own FixedUpdate) - now that FixedUpdate runs once more with P1's object and movement at P2's spot
+            try
+            {
+                var p1Pm = PlayerMovement.Instance;
+                P2Items.AtP2Spot("fog", () =>
+                {
+                    try
+                    {
+                        if (P2Movement.Pm != null) PlayerMovement.Instance = P2Movement.Pm;
+                        map.FixedUpdate();
+                        map.RevealFog();
+                    }
+                    finally { if (p1Pm != null) PlayerMovement.Instance = p1Pm; }
+                });
+            }
+            catch (Exception e) { if (fogLogs++ < 3) ModLog.Warn($"[map] P2's fog reveal failed: {e.Message}"); }
         }
     }
 

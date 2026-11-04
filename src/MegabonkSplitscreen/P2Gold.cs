@@ -39,6 +39,29 @@ internal static class P2Gold
         Refresh();
     }
 
+    // While P2's gold is in the game (a P2 window): P1's own amount in its place for one call (a P1 chest paid at the
+    // close of P2's window - InteractableChest pays at whichever chest window closes next). Returns false if not needed.
+    private static float p2Parked;
+    private static bool p1In;
+    public static bool BeginP1()
+    {
+        var inv = MyPlayer.Instance?.inventory;
+        if (inv == null || depth == 0 || p1In) return false;
+        p1In = true;
+        p2Parked = inv._gold_k__BackingField;
+        Set(inv, p1Held);
+        return true;
+    }
+    public static void EndP1()
+    {
+        var inv = MyPlayer.Instance?.inventory;
+        if (!p1In) return;
+        p1In = false;
+        if (inv == null) return;
+        p1Held = inv._gold_k__BackingField;
+        Set(inv, p2Parked);
+    }
+
     public static void Run(Action a)
     {
         SwapIn();

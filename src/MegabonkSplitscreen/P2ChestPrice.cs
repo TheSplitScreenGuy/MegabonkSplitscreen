@@ -74,6 +74,30 @@ internal static class P2ChestPrice
         if (bought) RefreshP1();
     }
 
+    // While P2's values are in the game: P1's for one call (P2Gold.BeginP1's chest price side)
+    private static int p2ParkedPurchased;
+    private static float p2ParkedIncrease;
+    private static bool p1In;
+    public static bool BeginP1()
+    {
+        if (depth == 0 || p1In) return false;
+        p1In = true;
+        p2ParkedPurchased = MoneyUtility.chestsPurchased;
+        p2ParkedIncrease = MoneyUtility.chestPriceIncrease;
+        MoneyUtility.chestsPurchased = heldPurchased;
+        MoneyUtility.chestPriceIncrease = heldIncrease;
+        return true;
+    }
+    public static void EndP1()
+    {
+        if (!p1In) return;
+        p1In = false;
+        heldPurchased = MoneyUtility.chestsPurchased;
+        heldIncrease = MoneyUtility.chestPriceIncrease;
+        MoneyUtility.chestsPurchased = p2ParkedPurchased;
+        MoneyUtility.chestPriceIncrease = p2ParkedIncrease;
+    }
+
     private static void RefreshP1()
     {
         try { counter?.OnChestPriceIncreased(); } catch { }

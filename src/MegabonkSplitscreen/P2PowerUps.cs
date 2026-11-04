@@ -199,12 +199,16 @@ internal static class P2PowerUps
     {
         v.enabled = false;
         visuals.Add((v, v.statusEffect));
-        if (logs++ < 20) ModLog.Info($"[powerup] P2's {v.statusEffect} visual '{v.name}' follows P2");
+        // Only a look for P2 (like the shield bubble copy): no colliders the game's enemies could take for "the player"
+        int cols = 0;
+        if (ShieldFix) foreach (var c in v.GetComponentsInChildren<Collider>(true)) if (c != null) { Object.Destroy(c); cols++; }
+        if (logs++ < 20) ModLog.Info($"[powerup] P2's {v.statusEffect} visual '{v.name}' follows P2 ({cols} colliders taken off)");
     }
 
     // The shield power-up's bubble: P1's is the game's Shield component on P1; P2 gets an inert copy on P2's body,
     // shown while P2's Shield effect lasts (v0.44.3, autotest screenshot: P1 in the green bubble, P2 without)
     private static GameObject bubble;
+    public static bool ShieldFix = true;   // TEMP autotest switch ('fix shield off'): colliders taken off P2's bubble copy
     private static void UpdateBubble()
     {
         bool want = Status?.statusEffects != null && Status.statusEffects.ContainsKey(EStatusEffect.Shield);
@@ -219,6 +223,18 @@ internal static class P2PowerUps
             bubble = Object.Instantiate(src.gameObject, hold.transform);
             foreach (var mb in bubble.GetComponentsInChildren<MonoBehaviour>(true))
                 if (mb != null && mb.GetIl2CppType().Assembly.GetName().Name == "Assembly-CSharp") Object.DestroyImmediate(mb);
+            // 1.0.2 (players: "if p2 has the shield power up and gets hit, p1 takes that damage ... ragdoll yeets p1 out of
+            // the map"; bug_shield_powerup: P2 shielded -> P1 lost HP and was flung at up to 3500 m/s): the copy is only a
+            // look - its colliders count as "the player" for the game's enemies, which then hit and push P1 from 300 m away
+            var removed = new List<string>();
+            if (ShieldFix)
+            {
+                foreach (var c in bubble.GetComponentsInChildren<Collider>(true))
+                    if (c != null) { removed.Add($"{c.GetIl2CppType().Name} '{c.name}' layer {LayerMask.LayerToName(c.gameObject.layer)} trigger {c.isTrigger}"); Object.DestroyImmediate(c); }
+                foreach (var r in bubble.GetComponentsInChildren<Rigidbody>(true))
+                    if (r != null) { removed.Add($"Rigidbody '{r.name}'"); Object.DestroyImmediate(r); }
+            }
+            ModLog.Info($"[powerup] P2's shield bubble: removed from the copy: {(removed.Count == 0 ? "nothing" : string.Join(", ", removed))}");
             bubble.name = "MegabonkSplitscreen_P2ShieldBubble";
             bubble.transform.SetParent(body.transform, false);
             bubble.transform.localPosition = p1Model.InverseTransformPoint(src.transform.position);

@@ -404,9 +404,22 @@ internal static class P2Health
 
     // ---------- Damage ----------
 
+    // TEMP autotest switch ('fix timefreeze off')
+    public static bool TimeFreezeFix = true;
+    private static int freezeLogs;
+
     private static void CheckContacts(float now)
     {
         if (cc == null || enemyLayerMask == 0) return;
+        // 1.0.2 (players: "when a time freeze power up is used, p2 still takes damage from physically touching enemies"):
+        // the game's frozen enemies don't hurt anyone (GameManager.IsTimeFreeze) - P2's touches are the mod's own check
+        bool frozen = false;
+        try { frozen = GameManager.Instance != null && GameManager.Instance.IsTimeFreeze(); } catch { }
+        if (frozen && TimeFreezeFix)
+        {
+            if (freezeLogs++ < 3) ModLog.Info("[freeze] time freeze on: no enemy touches for P2");
+            return;
+        }
         var t = body.transform;
         float scale = t.lossyScale.y;
         float r = cc.radius * t.lossyScale.x + ContactMargin;

@@ -23,7 +23,7 @@ namespace MegabonkSplitscreen;
 //   jump <p>            hold <p> <seconds>   (jump held)
 //   place p2 near p1    (P2 moved next to P1)
 //   snap [label]        shot <name>         log <text>        quit
-internal static class Autotest
+internal static partial class Autotest
 {
     public static bool Active { get; private set; }
     // v0.42.4 (weapon sweep: the first kills levelled both players up and the level-up screens paused the test): no
@@ -115,6 +115,7 @@ internal static class Autotest
         }
         catch (Exception e) { Report($"ERROR in phase {phase}: {e.Message}"); }
         try { TrackP1(); } catch { }
+        try { BugWatchers(); } catch { }
     }
 
     // 'trackp1': P1's position and velocity twice a second, and every one-frame jump over 8 m
@@ -1419,7 +1420,7 @@ internal static class Autotest
                     Quit();
                     return;
                 default:
-                    Report($"unknown command: {l}");
+                    if (!BugCommand(a, pi)) Report($"unknown command: {l}");
                     break;
             }
         }
@@ -1633,6 +1634,7 @@ internal static class Autotest
         foreach (var c in Object.FindObjectsOfType<Assets.Scripts.Inventory__Items__Pickups.Chests.InteractableChest>())
         {
             if (c == null || !c.isActiveAndEnabled || c.opening) continue;
+            if (c.chestType != Assets.Scripts.Inventory__Items__Pickups.Interactables.EChest.Normal) continue;   // paid chests only (a free one cost nothing - gold tests)
             bool can;
             try { can = c.CanInteract(); } catch { can = false; }
             if (!can) continue;
@@ -1640,9 +1642,14 @@ internal static class Autotest
             if (d < bestD) { bestD = d; best = c; }
         }
         if (best == null) return "chest: no unopened chest on the map";
-        Vector3 fwd = Vector3.right;
-        var to = at + fwd * 2.5f;
-        if (Physics.Raycast(to + Vector3.up * 20f, Vector3.down, out var hit, 60f)) to = hit.point;
+        // On the ground about the player's height, 2.5 m away (bug_stage2: straight down from 20 m up it landed on top of
+        // something 11 m above P1 - out of reach); 8 directions tried, from just above the player's head
+        var to = at + Vector3.right * 2.5f;
+        for (int k = 0; k < 8; k++)
+        {
+            var c = at + Quaternion.Euler(0f, k * 45f, 0f) * Vector3.right * 2.5f;
+            if (Physics.Raycast(c + Vector3.up * 2.5f, Vector3.down, out var h, 8f, ~0, QueryTriggerInteraction.Ignore) && h.point.y > at.y - 3.5f && h.point.y < at.y + 0.5f) { to = h.point; break; }   // (the player's position is ~1.85 m above its feet)
+        }
         best.transform.position = to;
         int price = 0;
         try { price = best.GetPrice(); } catch { }

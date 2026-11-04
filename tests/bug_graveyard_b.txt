@@ -1,0 +1,34 @@
+chars Monke Fox map Graveyard
+# Graveyard crypt, door fix on, nobody down: P1 uses the leave door -> P2 must land next to P1 on the map (case B of
+# bug_graveyard.txt, which a bad test placement spoiled). Twice, in two runs (doors are placed differently each run).
+wait 3
+godp1
+godp2
+crypt
+tocrypt p1 leave
+wait 1
+p1interact
+wait 6
+crypt
+p2pos
+shot gy_B1
+wait 3
+p2pos
+kill p2
+wait 2
+kill p1
+wait 8
+restart
+wait 15
+godp1
+godp2
+tocrypt p1 leave
+wait 1
+p1interact
+wait 6
+crypt
+p2pos
+shot gy_B2
+wait 3
+p2pos
+quit

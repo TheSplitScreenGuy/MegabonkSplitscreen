@@ -1,0 +1,63 @@
+chars Monke Robinette
+# User's play-test (1.0.2 fixes, P2 Robinette): "the gold for both players did go into the negatives at some point".
+# Cause found: the game pays a chest in InteractableChest.OnChestWindowClose when ANY chest window closes - with both
+# players' chests in flight, P2's chest was paid from P1's gold when P1's window closed (first run: P1 40 -> -62).
+# Both players interact with their own chest in the same frame, little gold; every gold change reported (goldwatch),
+# [chestpay] in the mod log. Run 1 fix off (reproduce), run 2 fix on: each pays its own chest, nobody negative.
+wait 2
+godp2
+godp1
+open
+clear
+clearloot
+nopowerups
+home 300
+goldwatch on
+keepwindows
+# ---- fix off
+fix chestpay off
+givegold p1 40
+givegold p2 40
+gold
+chestprice
+chest p1
+chest p2
+wait 0.5
+p1interact
+p2interact
+wait 1.5
+uiclick
+wait 5
+uiclick
+wait 2
+uiclick
+wait 5
+uiclick
+wait 2
+chestwin
+gold fix off
+chestprice
+# ---- fix on (each gets 20 more than its own next chest price)
+fix chestpay on
+givegold p1 200
+givegold p2 200
+gold
+chestprice
+chest p1
+chest p2
+wait 0.5
+p1interact
+p2interact
+wait 1.5
+uiclick
+wait 5
+uiclick
+wait 2
+uiclick
+wait 5
+uiclick
+wait 2
+chestwin
+gold fix on
+chestprice
+quit

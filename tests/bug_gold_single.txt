@@ -1,0 +1,58 @@
+chars Monke Robinette
+# Gold fix regression (chestpay ON): one player at a time buys a chest - each must pay its own price from its own gold,
+# its own chest price going up. P1, P2, P1, P2.
+wait 2
+godp2
+godp1
+open
+clear
+clearloot
+nopowerups
+home 300
+goldwatch on
+keepwindows
+givegold p1 300
+givegold p2 300
+gold
+chestprice
+chest p1
+wait 0.5
+p1interact
+wait 1.5
+uiclick
+wait 5
+uiclick
+wait 2
+gold after P1's chest
+chestprice
+chest p2
+wait 0.5
+p2interact
+wait 1.5
+uiclick
+wait 5
+uiclick
+wait 2
+gold after P2's chest
+chestprice
+chest p1
+wait 0.5
+p1interact
+wait 1.5
+uiclick
+wait 5
+uiclick
+wait 2
+gold after P1's 2nd chest
+chestprice
+chest p2
+wait 0.5
+p2interact
+wait 1.5
+uiclick
+wait 5
+uiclick
+wait 2
+gold after P2's 2nd chest
+chestprice
+quit

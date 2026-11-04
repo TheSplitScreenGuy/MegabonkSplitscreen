@@ -126,6 +126,16 @@ internal static class Downed
         if (P2Health.IsDead) { P2Health.ReviveOnStart = true; ModLog.Info("[down] new stage: P2 comes back with P2's entrance"); }
     }
 
+    // A door that teleports the players (DoorTeleports, Graveyard crypts): like a new stage - the old place's countdown
+    // and gravestones go, a downed P1 is back now (before the game moves P1); a downed P2 is revived once it is moved
+    public static void OnDoor()
+    {
+        if (!P1Down && !P2Health.IsDead) return;
+        MegabonkSplitscreen.Revive.Reset();
+        ReviveUi.Reset();
+        if (P1Down) { allowGameOver = false; Revive(0); ModLog.Info("[down] door: P1 revived"); }
+    }
+
     // Each physics step and frame while P1 is down: P1 stays where P1 went down
     // Revive's rise out of the portal: P1's model shows while P1 is still down
     public static void ShowP1ForRise() => SetP1Visible(true);

@@ -115,7 +115,12 @@ internal static class P2Control
         float dt = Time.deltaTime;
         // Paused (level-up screen, pause menu). The game's menus pause its own clock (MyTime.paused), not always
         // Unity's (user: P2's weapons kept firing under a level-up screen)
-        if (dt <= 0f || Assets.Scripts.Utility.MyTime.paused) return;
+        if (dt <= 0f || Assets.Scripts.Utility.MyTime.paused)
+        {
+            // A followed under menus (P2Movement.FollowA): the press that picks an offer is no jump afterwards
+            if (P2Movement.JumpReleaseFix) { bool held = ReadA(joy); aWasDown = held; P2Movement.FollowA(held); }
+            return;
+        }
         P2Body.Sub("control: weapons", P2Weapons.Tick);
 
         Vector2 stick = ReadStick(joy);

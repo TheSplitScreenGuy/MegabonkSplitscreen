@@ -66,6 +66,7 @@ public class Plugin : BasePlugin
         P2GameHealth.Apply(hooks, config);
         P2Abilities.Apply(hooks);
         Downed.Apply(hooks);
+        DoorTeleports.Apply(hooks);
         P2Hazards.Apply(hooks);
         P2BossAttacks.Apply(hooks);
         P2Debuffs.Apply(hooks);

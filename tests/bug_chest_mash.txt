@@ -1,0 +1,77 @@
+chars Monke Monke
+# Players' report (1.0.2): "when player 2 buys a chest, player 1 opens 1-6 additional chests (if p2 mashes the interact
+# button on a chest, p1 gets spammed with free chests)". P2 mashes its interact button (X) on a chest it can pay for,
+# with P2's chest window left open like a player would (the game pauses its clock, not Unity's). Counted: P2's
+# presses, chests P2 really interacted with, chest windows queued/opened for each player, both players' gold.
+# Run 1 with the fix off (reproduce), run 2 with it on.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 300
+wait 1
+givegold p2 3000
+givegold p1 100
+goldwatch on
+gold
+# ---- fix off
+fix chestmash off
+chestq before
+keepwindows
+chest p2
+wait 0.5
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 1
+chestwin
+shot mash_off_window
+chestq while P2's window is open (fix off)
+keepwindows off
+wait 8
+chestq after all windows closed (fix off)
+gold
+# ---- fix on
+fix chestmash on
+keepwindows
+chest p2
+wait 0.5
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 0.15
+p2press x 0.05
+wait 1
+chestwin
+shot mash_on_window
+chestq while P2's window is open (fix on)
+keepwindows off
+wait 8
+chestq after all windows closed (fix on)
+gold
+quit

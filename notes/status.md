@@ -2,6 +2,40 @@
 
 Goal: 2-player local splitscreen for Megabonk (single-player Unity game).
 
+## Players' reports after 1.0.2 (2026-11-03) - tests\bug_*.txt, new commands in AutotestBugs.cs
+- Chest mash: REPRODUCED (8 presses -> 7 free P1 windows), FIXED (P2Interact: no presses while MyTime.paused, guard on
+  opening/same chest). Jump after level-up pick: REPRODUCED (5.8 m), FIXED (P2Movement.FollowA/WaitForJumpRelease).
+- Shield power-up hits P1 + yeets P1 ("sent into the sky"): REPRODUCED (P1 flung to 83 m), FIXED - the game's
+  ShieldPickupEffect taken over for P2 had a collider enemies treat as P1 (P2PowerUps.TakeVisual removes colliders).
+- Graveyard crypt (run starts ~2 km up; leave door moves P1 only): REPRODUCED (P2 left falling/reset forever), FIXED
+  (DoorTeleports: P2 follows P1's jump(s) for 2 s, downed player revived). Verified: P2 down + P1 door, P1 down + P2
+  door -> both 2 m apart. Nobody down, P1 uses the door (tests\bug_graveyard_b.txt, 2 runs, one with the game's
+  two-step move): P2 2 m from P1 on the map both times.
+- Stage 2 negative gold / items to one person: NOT reproduced (gold and owners correct on stage 2). Safeguard: owner
+  lists resync with the game's rewardQueue when a window opens (P2Interact.Resync, P2LevelUp, P2Rewards).
+- Dexecutioner: NOT reproduced (forced 50%: P1 7/15, P2 8/14 executions). User's idea "a visual effect only P1 gets":
+  checked too - tests\bug_dexecutioner_fx.txt (chance forced to 100%, [execfx]): the game's 'ExecuteEffect' appears
+  3 m from the executed enemy for P2's executions exactly like P1's; the user watched the run and saw it play for P2.
+  Ask players what "executioner" meant / what looked wrong.
+- Time freeze (clock) and P2 touching enemies: REPRODUCED (tests\bug_timefreeze.txt, fix off: frozen skeletons took P2
+  100 -> 0 in 4 s, P1 untouched), FIXED - P2's contact check (P2Health.CheckContacts, the mod's own) now skips while
+  GameManager.IsTimeFreeze(); tests\bug_timefreeze_on.txt: P2 100/100 through the freeze, after it the same ring kills
+  P2 in 3 s (damage back). Side note: the autotest 'revive p2' left P2 at 0 HP once (P1 then died to natural spawns) -
+  not looked into.
+- Negative gold (user's play-test, P2 Robinette): REPRODUCED (tests\bug_gold_negative.txt, both players interact with
+  their chest in the same frame: P1 40 -> -62). Cause: the game pays a chest in InteractableChest.OnChestWindowClose,
+  which every chest on the map runs when ANY chest window closes; the opening chests pay then, from the gold in the
+  game - P2's chest was paid by P1 at P1's window close, at P1's chest price. FIXED (P2Interact.ApplyPayFix): P2's
+  chests (by pointer) pay with P2's gold + chest price swapped in, P1's chests with P1's (P2Gold/P2ChestPrice.BeginP1)
+  when a P2 window is closing. Fix on: P1 paid its own 115, P2 its own 30, nobody twice. tests\bug_gold_single.txt:
+  single purchases still charged right. PITFALL: a second, separate Harmony patch on OnChestWindowClose plus a probe
+  on InteractableChest.FixedUpdate stopped the game charging ANY chest (free chests) - one patch call only.
+- P2 didn't uncover the map's fog: REPRODUCED (tests\bug_fog_p2.txt, FullMap.visitedCords: P2 walked 80 m -> 0 cells,
+  P1 110 m -> 13). FullMap.QueueRevealFog(P2's spot) (+ RevealFog) did nothing - the game reveals around "the player" in
+  its FixedUpdate. FIXED (MapView): every 0.5 s FullMap.FixedUpdate + RevealFog run with P1's object and
+  PlayerMovement.Instance at P2's spot (P2Items.AtP2Spot). Now P2 110 m -> 13 cells, P1 70 m -> 7; P1 not moved.
+- TEMP switches: 'fix chestmash|jumprelease|doors|shield|timefreeze|chestpay off', [queue] / [chestpay] logs.
+
 ## After the 1.0 alpha release: players' reports (2026-11-01)
 Reports (characters unknown): (1) P2 fires at P1's target / in P1's direction; (2) knockback reversed - enemies
 knocked into P2; (3) P2 can't grab pick-ups or XP; (4) P2 can't take the heart power-up; (5) at tier 2, P2 took no

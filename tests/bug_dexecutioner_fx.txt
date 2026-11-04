@@ -1,0 +1,39 @@
+chars Monke Monke
+# User (1.0.2, "executioner doesnt work on player 2"; executions themselves work for P2 - bug_dexecutioner): maybe P1
+# gets a visual effect on an execution that P2 doesn't. Both players with only the Dexecutioner, ~300 m apart, every
+# swing's execution chance forced to 100%: where the game's execute effect shows up after each player's execution,
+# and screenshots of both halves mid-fight. P1 alone first, then P2 alone (the other player unarmed).
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 300
+unweapon p1 all
+unweapon p2 all
+wait 1
+dexchance 1
+execs reset
+weapon p1 Dexecutioner
+spawn p1 GoblinTank 6 4
+wait 1.5
+shot dexfx_p1_a
+wait 0.4
+shot dexfx_p1_b
+wait 4
+execs P1 alone
+unweapon p1 all
+clear
+wait 1
+execs reset
+weapon p2 Dexecutioner
+spawn p2 GoblinTank 6 4
+wait 1.5
+shot dexfx_p2_a
+wait 0.4
+shot dexfx_p2_b
+wait 4
+execs P2 alone
+quit

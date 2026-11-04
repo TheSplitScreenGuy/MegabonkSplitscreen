@@ -355,9 +355,33 @@ internal static class P2Movement
     // Called every frame by P2Control: remember jump presses so a short tap isn't missed between physics steps
     public static void ReadInput(bool aDown)
     {
+        if (waitRelease)
+        {
+            if (aDown) return;
+            waitRelease = false;
+        }
         if (aDown && !aHeld) jumpQueued = true;
         aHeld = aDown;
     }
+
+    // 1.0.2 (players: "when selecting powerups, p2 always jumps after selection"): P2's input isn't read while the game
+    // is paused, so the A that picked the offer looked like a new press the moment the screen closed. While paused A is
+    // only followed (no jump), and after P2's menu gives the controls back a held A must be let go before it jumps.
+    public static void FollowA(bool aDown)
+    {
+        if (!JumpReleaseFix) return;
+        aHeld = aDown;
+        jumpQueued = false;
+    }
+    public static void WaitForJumpRelease()
+    {
+        if (!JumpReleaseFix) return;
+        waitRelease = true;
+        jumpQueued = false;
+        aHeld = false;
+    }
+    private static bool waitRelease;
+    public static bool JumpReleaseFix = true;   // TEMP autotest switch ('fix jumprelease off')
 
     // On while no wall-run button is bound (P1's PlayerInput.hasWallrunActionBound), like the game does for P1
     private static bool WallrunHeld()

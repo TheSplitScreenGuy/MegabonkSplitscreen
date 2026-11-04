@@ -1,0 +1,48 @@
+chars Monke Monke
+# Players' report (1.0.2): "when selecting powerups, p2 always jumps after selection". P2's level-up screen opens, P2
+# holds A and the offer is taken with it (as a pad's A on the button does); P2's highest point in the next 2.5 s is
+# measured (a jump = about 4-5 m). Run 1 with the fix off (reproduce), run 2 with it on. Then a chest window.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 300
+wait 2
+watchy p2 2
+wait 2.5
+# ---- fix off
+fix jumprelease off
+p2levelup 1
+wait 1.5
+p2press a 0.5
+wait 0.1
+pickoffer
+watchy p2 2.5
+wait 3
+p2pos
+# ---- fix on
+fix jumprelease on
+p2levelup 1
+wait 1.5
+p2press a 0.5
+wait 0.1
+pickoffer
+watchy p2 2.5
+wait 3
+p2pos
+# ---- fix on, a second time (two in a row)
+p2levelup 1
+wait 1.5
+p2press a 0.5
+wait 0.1
+pickoffer
+watchy p2 2.5
+wait 3
+# ---- a normal jump afterwards still works
+jump p2
+watchy p2 2
+wait 2.5
+quit

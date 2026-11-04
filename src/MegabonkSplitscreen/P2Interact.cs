@@ -43,7 +43,81 @@ internal static class P2Interact
         }
         ModLog.Info($"P2Interact: {n} chest window hooks");
         ApplyFreeChest(harmony);
+        ApplyPayFix(harmony);
+        // TEMP [queue] (players: "on stage 2 the items all go to 1 person"): what the game does with waiting reward
+        // windows at the end of a stage - the mod's owner lists must stay in step with the game's queue
+        foreach (var name in new[] { "QueueEncountersForNextMap", "OnPortalClosed" })
+        {
+            var m = AccessTools.DeclaredMethod(typeof(Assets.Scripts.UI.InGame.Levelup.EncounterWindows), name);
+            if (m == null || !P2Weapons.IsNativeCodeUnique(m) || P2Weapons.IsNativeCodeHooked(m)) { ModLog.Warn($"[queue] EncounterWindows.{name} not hookable"); continue; }
+            harmony.Patch(m, prefix: new HarmonyMethod(typeof(P2Interact), nameof(BeforeQueueChange)), postfix: new HarmonyMethod(typeof(P2Interact), nameof(AfterQueueChange)));
+        }
     }
+
+    // TEMP [chestpay] (user: both players' gold went negative; bug_gold_negative: two chests in flight -> P1 paid both):
+    // which chest method takes the money, and from whose gold
+    public static void ApplyPayProbe(Harmony harmony)
+    {
+        foreach (var name in new[] { "OnChestWindowClose", "OpenChestImplementation", "FixedUpdate" })
+        {
+            var m = AccessTools.DeclaredMethod(typeof(InteractableChest), name);
+            if (m == null || !P2Weapons.IsNativeCodeUnique(m) || P2Weapons.IsNativeCodeHooked(m)) { ModLog.Warn($"[chestpay] InteractableChest.{name} not hookable"); continue; }
+            harmony.Patch(m, prefix: new HarmonyMethod(typeof(P2Interact), nameof(BeforePay)), finalizer: new HarmonyMethod(typeof(P2Interact), nameof(AfterPay)));
+            ModLog.Info($"[chestpay] watching InteractableChest.{name}");
+        }
+    }
+    private static void BeforePay(InteractableChest __instance, out (float gold, bool opening) __state)
+    {
+        __state = (MyPlayer.Instance?.inventory?._gold_k__BackingField ?? 0f, __instance != null && __instance.opening);
+    }
+
+    // 1.0.2 (user: both players' gold went negative; bug_gold_negative: P1 40 -> -62 with both chests bought together):
+    // the game pays a chest in InteractableChest.OnChestWindowClose, which every opening chest runs when ANY chest window
+    // closes - P2's chest was paid when P1's window closed, from P1's gold. Now each chest pays from its buyer's gold and
+    // chest price, whoever's window is closing.
+    public static bool PayFix = true;   // TEMP autotest switch ('fix chestpay off')
+    private static void ApplyPayFix(Harmony harmony)
+    {
+        var m = AccessTools.DeclaredMethod(typeof(InteractableChest), "OnChestWindowClose");
+        // One patch call only: with a separate probe patch on it too (and on the chest's FixedUpdate) no chest was paid at all
+        if (m == null || !P2Weapons.IsNativeCodeUnique(m) || P2Weapons.IsNativeCodeHooked(m)) { ModLog.Warn("[chestpay] InteractableChest.OnChestWindowClose not hookable - chests pay from whoever's window closes"); return; }
+        harmony.Patch(m, prefix: new HarmonyMethod(typeof(P2Interact), nameof(BeforeChestPay)), finalizer: new HarmonyMethod(typeof(P2Interact), nameof(AfterChestPay)));
+        ModLog.Info("[chestpay] each chest pays from its buyer's gold");
+    }
+    private static int payLogs2;
+    private static void BeforeChestPay(InteractableChest __instance, out int __state)
+    {
+        __state = 0;
+        if (__instance != null && __instance.opening && payLogs2++ < 30) ModLog.Info($"[chestpay] OnChestWindowClose: chest P2's {__instance != null && p2Chests.Contains(__instance.Pointer)}, opening {__instance?.opening}, P2's gold in {P2Gold.SwappedIn}, game gold {MyPlayer.Instance?.inventory?._gold_k__BackingField:F0}");
+        if (!PayFix || __instance == null) return;
+        bool p2s = p2Chests.Contains(__instance.Pointer);
+        if (p2s && !P2Gold.SwappedIn) { P2Gold.SwapIn(); P2ChestPrice.SwapIn(); __state = 1; }
+        else if (!p2s && P2Gold.SwappedIn) { bool g = P2Gold.BeginP1(); bool c = P2ChestPrice.BeginP1(); __state = (g ? 2 : 0) | (c ? 4 : 0); }
+    }
+    private static Exception AfterChestPay(Exception __exception, int __state)
+    {
+        if (__state == 1) { P2ChestPrice.SwapOut(); P2Gold.SwapOut(); }
+        if ((__state & 4) != 0) P2ChestPrice.EndP1();
+        if ((__state & 2) != 0) P2Gold.EndP1();
+        return __exception;
+    }
+    private static int payLogs;
+    private static Exception AfterPay(InteractableChest __instance, System.Reflection.MethodBase __originalMethod, (float gold, bool opening) __state, Exception __exception)
+    {
+        float now = MyPlayer.Instance?.inventory?._gold_k__BackingField ?? 0f;
+        bool opening = __instance != null && __instance.opening;
+        if ((now != __state.gold || opening != __state.opening) && payLogs++ < 40)
+            ModLog.Info($"[chestpay] {__originalMethod?.Name} on chest {__instance?.Pointer.ToInt64():X} (P2's {p2Chests.Contains(__instance?.Pointer ?? IntPtr.Zero)}): game gold {__state.gold:F0} -> {now:F0}, opening {__state.opening} -> {opening}; " +
+                        $"P2's gold in {P2Gold.SwappedIn}, P2's chest window {ChestIsP2s}, price now {Assets.Scripts.Inventory__Items__Pickups.GoldAndMoney.MoneyUtility.GetChestPrice()}");
+        return __exception;
+    }
+    // Chests P2 bought (by pointer), for the probe and the fix
+    private static readonly HashSet<IntPtr> p2Chests = new();
+
+    private static void BeforeQueueChange(System.Reflection.MethodBase __originalMethod) =>
+        ModLog.Info($"[queue] before EncounterWindows.{__originalMethod?.Name}: game {GameQueue()}; mod's chest owners [{string.Join(",", chestOwners.Select(o => o ? "P2" : "P1"))}], P2 level-ups waiting {P2LevelUp.Pending}");
+    private static void AfterQueueChange(System.Reflection.MethodBase __originalMethod) =>
+        ModLog.Info($"[queue] after EncounterWindows.{__originalMethod?.Name}: game {GameQueue()}");
 
     // Called every frame in a run (from P2Body.Update), also while paused (chest window)
     public static void Update()
@@ -51,8 +125,11 @@ internal static class P2Interact
         UpdateChestControls();
         var joy = PlayerJoin.P2Joystick;
         var p1 = MyPlayer.Instance;
-        if (joy == null || p1 == null || !P2Movement.Active || P2Health.IsDead || Time.timeScale <= 0f)
+        // 1.0.2 (players: P2 mashing interact on a chest gave P1 a pile of chests): the game's windows pause its own clock
+        // (MyTime.paused), not always Unity's - P2's presses reached the world under P2's own chest window
+        if (joy == null || p1 == null || !P2Movement.Active || P2Health.IsDead || Time.timeScale <= 0f || (MashFix && Assets.Scripts.Utility.MyTime.paused))
         {
+            if (joy != null && MashFix) buttonWasDown = ButtonHeld(joy);   // a press held over a window is no new press after it
             SetCurrent(null);
             return;
         }
@@ -180,7 +257,33 @@ internal static class P2Interact
         catch { }
     }
 
-    private static int interactLogs;
+    private static int interactLogs, mashLogs;
+    private static IntPtr lastChest;
+    private static float lastChestAt = -1f;
+    // TEMP autotest switch ('fix chestmash off'): the extra-press guard above
+    public static bool MashFix = true;
+    // Autotest counters (chest_mash test): P2's presses on chests, chests P2 really opened, windows queued/opened per player
+    public static int ChestPresses, ChestInteracts;
+    public static readonly int[] Queued = new int[2], Opened = new int[2];
+    public static string Counters() =>
+        $"P2 presses on chests {ChestPresses}, P2 chest interactions {ChestInteracts}; windows queued P1 {Queued[0]} / P2 {Queued[1]}, opened P1 {Opened[0]} / P2 {Opened[1]}; " +
+        $"owners waiting [{string.Join(",", chestOwners.Select(o => o ? "P2" : "P1"))}]; game queue {GameQueue()}";
+
+    // The game's waiting reward windows (and the ones it keeps for the next map), for the logs
+    public static string GameQueue()
+    {
+        try
+        {
+            var ew = Object.FindObjectOfType<Assets.Scripts.UI.InGame.Levelup.EncounterWindows>();
+            var parts = new List<string>();
+            if (ew?.rewardQueue != null) foreach (var e in ew.rewardQueue) parts.Add(e.ToString());
+            var next = new List<string>();
+            var nq = Assets.Scripts.UI.InGame.Levelup.EncounterWindows.nextMapQueue;
+            if (nq != null) foreach (var e in nq) next.Add(e.ToString());
+            return $"[{string.Join(",", parts)}] in progress {ew?.encounterInProgress}, next map [{string.Join(",", next)}]";
+        }
+        catch (Exception e) { return "? " + e.Message; }
+    }
     // Everything P2 interacts with is paid from P2's gold (separate gold per player)
     private static void InteractAsP2(BaseInteractable bi) => P2Gold.Run(() => P2ChestPrice.Run(() => InteractAsP2Inner(bi)));
 
@@ -198,12 +301,23 @@ internal static class P2Interact
                 ModLog.Info("P2 used a greed shrine (effect on P2's stats)");
                 return;
             }
-            if (bi.TryCast<InteractableChest>() != null)
+            var chest = bi.TryCast<InteractableChest>();
+            if (chest != null)
             {
+                ChestPresses++;
+                // 1.0.2 (players: "if p2 mashes the interact button on a chest, p1 gets spammed with free chests"): a press
+                // while P2's chest is still opening, or its window is on its way, would buy/open it again - not passed on
+                bool again = lastChest == chest.Pointer && Time.unscaledTime - lastChestAt < 1.5f;
+                if (MashFix && (chest.opening || P2OpeningChest || again))
+                {
+                    if (mashLogs++ < 10) ModLog.Info($"[chest] P2's extra press on a chest ignored (opening {chest.opening}, P2's window pending/open {P2OpeningChest}, same chest again {again})");
+                    return;
+                }
                 chestPendingUntil = Time.unscaledTime + 3f;   // its window opens now or right after
                 bool ok = bi.Interact();
                 if (!ok) chestPendingUntil = -1f;
-                ModLog.Info($"P2 opened a chest ({(ok ? "window opening" : "couldn't")})");
+                else { ChestInteracts++; lastChest = chest.Pointer; lastChestAt = Time.unscaledTime; p2Chests.Add(chest.Pointer); }
+                ModLog.Info($"P2 opened a chest ({(ok ? "window opening" : "couldn't")}; opening {chest.opening}, game queue {GameQueue()})");
                 ItemEvents.P2Interacted(bi, ok);   // P2's own items that react to interacting (Ghost)
                 return;
             }
@@ -239,17 +353,48 @@ internal static class P2Interact
     {
         bool p2 = P2OpeningChest && !ChestIsP2s;
         chestOwners.Enqueue(p2);
+        Queued[p2 ? 1 : 0]++;
         if (p2) chestPendingUntil = -1f;   // taken into the queue
-        if (queueLogs++ < 10) ModLog.Info($"[chest] {e} window queued for {(p2 ? "P2" : "P1")} ({chestOwners.Count} waiting)");
+        if (queueLogs++ < 30) ModLog.Info($"[chest] {e} window queued for {(p2 ? "P2" : "P1")} ({chestOwners.Count} waiting; game queue {GameQueue()})");
     }
     private static int queueLogs;
-    public static void Reset() { chestOwners.Clear(); chestPendingUntil = -1f; }
+    public static void Reset() { chestOwners.Clear(); p2Chests.Clear(); chestPendingUntil = -1f; Array.Clear(Queued); Array.Clear(Opened); ChestPresses = ChestInteracts = 0; }
+
+    // How many reward windows the game still has waiting that match (the one opening is no longer in its queue)
+    public static int WaitingInGame(Func<Assets.Scripts.UI.InGame.Rewards.EEncounter, bool> match)
+    {
+        try
+        {
+            var q = Object.FindObjectOfType<Assets.Scripts.UI.InGame.Levelup.EncounterWindows>()?.rewardQueue;
+            if (q == null) return -1;
+            int n = 0;
+            foreach (var e in q) if (match(e)) n++;
+            return n;
+        }
+        catch { return -1; }
+    }
+
+    // 1.0.2 (players: "sometimes on stage 2 the items all go to 1 person (could be player 1 or 2)"): the owner list is
+    // a copy kept next to the game's queue. If the game drops waiting windows (a stage change, game over...) the copy
+    // keeps owners for windows that will never open, and every later chest takes the wrong one. When a window opens the
+    // copy may hold at most this one + the chests still waiting in the game's queue; older extras are dropped.
+    public static int Resync<T>(Queue<T> owners, int waiting, string what)
+    {
+        if (waiting < 0 || owners.Count <= waiting + 1) return 0;
+        int dropped = 0;
+        while (owners.Count > waiting + 1) { owners.Dequeue(); dropped++; }
+        ModLog.Info($"[queue] {what}: {dropped} stale owner(s) dropped (the game has {waiting} waiting besides the one opening)");
+        return dropped;
+    }
 
     private static void AfterChestOpen(ChestWindowUi __instance)
     {
         bool p2;
+        Resync(chestOwners, WaitingInGame(IsChestEncounter), "chest windows");
         if (chestOwners.Count > 0) p2 = chestOwners.Dequeue();
         else p2 = chestPendingUntil >= 0f && Time.unscaledTime <= chestPendingUntil;   // opened without queueing
+        Opened[p2 ? 1 : 0]++;
+        if (queueLogs++ < 30) ModLog.Info($"[chest] window opening for {(p2 ? "P2" : "P1")} ({chestOwners.Count} still waiting; game queue {GameQueue()})");
         if (!p2) return;
         chestPendingUntil = -1f;
         ChestIsP2s = true;

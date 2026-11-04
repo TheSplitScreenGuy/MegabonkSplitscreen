@@ -86,8 +86,10 @@ internal static class P2LevelUp
 
     // ---------- Who owns each queued level-up ----------
 
+    private static int addLogs;
     private static void BeforeAddEncounter(EEncounter rewardWindowType)
     {
+        if (addLogs++ < 60) ModLog.Info($"[queue] AddEncounter {rewardWindowType} (P2's level-up {queueingForP2}); game {P2Interact.GameQueue()}");
         if (rewardWindowType != EEncounter.Levelup)
         {
             // Chests: whose window, decided now and kept until it opens (v0.49.2: a chest window queued while P1 was
@@ -112,6 +114,10 @@ internal static class P2LevelUp
         bool p2;
         if (encounterType == EEncounter.Levelup)
         {
+            // Owners of level-ups the game no longer has waiting (dropped at a stage change...) would make the next
+            // screens the wrong player's (P2Interact.Resync)
+            if (P2Interact.Resync(owners, P2Interact.WaitingInGame(e => e == EEncounter.Levelup), "level-ups") > 0)
+                Pending = Math.Min(Pending, owners.Count(o => o));
             p2 = owners.Count > 0 && owners.Dequeue();
             if (!p2) return;
             Pending = Math.Max(0, Pending - 1);
@@ -309,6 +315,7 @@ internal static class P2LevelUp
             if (j != null) p0.controllers.AddController(j, false);
         p0.controllers.hasKeyboard = hadKeyboard;
         p0.controllers.hasMouse = hadMouse;
+        P2Movement.WaitForJumpRelease();   // the A that closed P2's menu is no jump
         ModLog.Info($"Controls -> P1: {removedJoysticks.Count} joystick(s) back, keyboard {hadKeyboard}, mouse {hadMouse}");
         removedJoysticks.Clear();
     }

@@ -1,0 +1,141 @@
+chars Monke Fox tier 2 map Forest
+# Players' reports (1.0.2): "going into stage 2 causes both players to have negative gold"; "sometimes on stage 2 the
+# items all go to 1 person (could be player 1 or 2)". Stage 1: each player buys a chest and takes the item, both level
+# up (P2's screens queued), P2 summons the boss and takes the portal. Every gold change is reported (goldwatch) with
+# what had the game's gold at the time; the chest owner lists and the game's reward queue at each step; in stage 2
+# each player opens chests and the item must land with that player.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 300
+goldwatch on
+givegold p1 1500
+givegold p2 1500
+gold
+keepwindows
+# ---- stage 1: P1's chest (Open, then Take)
+isnap s1a
+chest p1
+wait 0.5
+p1interact
+wait 1.5
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 1.5
+isnap s1b
+idelta s1a s1b
+chestq stage 1 after P1's chest
+# ---- stage 1: P2's chest
+chest p2
+wait 0.5
+p2interact
+wait 1.5
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 1.5
+isnap s1c
+idelta s1b s1c
+chestq stage 1 after P2's chest
+gold
+keepwindows off
+# ---- both level up (levels picked)
+xp on
+addxp p1 60
+addxp p2 60
+wait 1
+pickoffer
+wait 1
+pickoffer
+wait 1
+pickoffer
+wait 1
+pickoffer
+wait 1
+pickoffer
+wait 1
+pickoffer
+wait 1
+xp off
+gold
+# ---- to stage 2 (P2 summons the boss, takes the portal)
+stagestate
+toportal p2
+wait 1
+p2interact
+wait 4
+killbosses
+wait 3
+killbosses
+wait 3
+stagestate
+toportal p2 far
+wait 1
+toportal p2
+wait 1
+gold
+p2interact
+wait 4
+gold
+chestq at the portal
+wait 10
+stagestate
+gold
+chestq stage 2 start
+wait 6
+gold
+home 300
+wait 2
+keepwindows
+# ---- stage 2: P1's chest, then P2's, then P1's again
+isnap s2a
+chest p1
+wait 0.5
+p1interact
+wait 1.5
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 1.5
+isnap s2b
+idelta s2a s2b
+chestq stage 2 after P1's chest
+chest p2
+wait 0.5
+p2interact
+wait 1.5
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 1.5
+isnap s2c
+idelta s2b s2c
+chestq stage 2 after P2's chest
+chest p1
+wait 0.5
+p1interact
+wait 1.5
+chestwin
+uiclick
+wait 5
+chestwin
+uiclick
+wait 1.5
+isnap s2d
+idelta s2c s2d
+chestq stage 2 after P1's second chest
+gold
+quit

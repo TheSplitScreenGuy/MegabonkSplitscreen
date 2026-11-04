@@ -1,0 +1,59 @@
+chars Monke Fox
+# Players' report (1.0.2): "if p2 has the shield power up and gets hit, it causes p1 to take that damage instead (also
+# ragdoll yeets p1 out of the map)"; also "the players get randomly sent into the sky". P2 picks up the Shield power-up,
+# 3 skeletons hit P2 (~300 m from P1). Both players' HP/shield before and after, P1 tracked (any one-frame jump over
+# 8 m is reported), both players' highest point. Then the same hits after P2's shield ran out (baseline), then P1 with
+# the shield. First run (1.0.2): P1 lost HP and was flung up to 83 m high while P2 was shielded.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+home 300
+wait 1
+health start
+statuses
+pickup p2 Shield
+wait 1.5
+statuses
+health with shield
+trackp1 10
+watchy p1 9
+watchy p2 9
+spawnside p2 Skeleton 3 3
+wait 1
+health 1 s of hits
+wait 2
+health 3 s of hits
+statuses
+wait 6
+health after 9 s
+snap shield
+shot shield_hits
+clear
+home
+wait 6
+# ---- baseline: P2 hit after its shield ran out
+health baseline start
+statuses
+trackp1 8
+watchy p1 7
+watchy p2 7
+spawnside p2 Skeleton 3 3
+wait 7.5
+health baseline after
+clear
+# ---- P1 with the shield, P1 hit (the game's own case)
+home
+wait 1
+pickup p1 Shield
+wait 1.5
+health p1 shield start
+trackp1 8
+watchy p1 7
+watchy p2 7
+spawnside p1 Skeleton 3 3
+wait 7.5
+health p1 shield after
+quit

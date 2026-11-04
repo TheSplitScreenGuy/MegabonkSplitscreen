@@ -1,0 +1,29 @@
+chars Monke Monke
+# User (1.0.2 play-test): P2 doesn't uncover the map's fog of war - only P1's path does. The game's FullMap counts the
+# revealed cells: P2 walks for 10 s while P1 stands still, then P1 walks for 10 s while P2 stands still (baseline).
+# Both must reveal about the same amount.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 300
+wait 2
+fog start
+go p2 1 0
+wait 10
+stop p2
+wait 1
+fog after P2 walked
+go p1 1 0
+wait 10
+stop p1
+wait 1
+fog after P1 walked
+map p2 on
+wait 1.5
+shot fog_p2_map
+map p2 off
+quit

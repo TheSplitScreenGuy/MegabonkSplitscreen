@@ -121,6 +121,7 @@ internal static class P2Body
         Guard("minimap", P2Minimap.Update);
         Guard("bossbars", BossBars.Update);
         Guard("interact", P2Interact.Update);
+        Guard("doors", DoorTeleports.Update);
         Guard("explosions", P2Explosions.Update);
         Guard("rewards", P2Rewards.Update);
         Guard("fall", FallDamage.Update);

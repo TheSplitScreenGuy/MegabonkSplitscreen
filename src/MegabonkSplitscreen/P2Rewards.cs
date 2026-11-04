@@ -98,6 +98,14 @@ internal static class P2Rewards
     // The window for `type` is opening: whose is it? (the oldest queued reward of that type)
     public static bool TakeOwner(EEncounter type)
     {
+        // Owners of rewards of this type the game no longer has waiting are dropped, oldest first (P2Interact.Resync)
+        int waiting = P2Interact.WaitingInGame(e => e == type);
+        int mine = owners.Count(o => o.type == type);
+        if (waiting >= 0 && mine > waiting + 1)
+        {
+            for (int k = 0; k < mine - waiting - 1; k++) owners.RemoveAt(owners.FindIndex(o => o.type == type));
+            ModLog.Info($"[queue] {type}: {mine - waiting - 1} stale owner(s) dropped");
+        }
         int i = owners.FindIndex(o => o.type == type);
         if (i < 0) return false;
         bool p2 = owners[i].p2;
