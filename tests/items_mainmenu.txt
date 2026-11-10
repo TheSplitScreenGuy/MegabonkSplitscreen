@@ -1,0 +1,87 @@
+chars Monke Monke tier 1 map Forest
+# Players' report: items (Cheese, Cursed Doll, Soul Harvester, Slutty Cannon) stop working with two players "after
+# restarting once". Death-screen restart and the pause menu's restart did not reproduce it. Here: run 1 with the items,
+# quit to the main menu (pause menu), a new run through lobby + character select, run 2 with the same items.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+place 40
+wait 1
+item p1 MoldyCheese 3
+item p1 CursedDoll 3
+item p1 SoulHarvester 3
+item p1 SluttyCannon 3
+item p2 MoldyCheese 3
+item p2 CursedDoll 3
+item p2 SoulHarvester 3
+item p2 SluttyCannon 3
+wait 1
+srccount reset
+spawn p1 Skeleton 8 6
+spawn p2 Skeleton 8 6
+wait 10
+srccount run1
+eventcheck run1-after
+clear
+wait 1
+gomain
+wait 6
+menustate
+waitselected B_Play 20
+p1press
+wait 2
+menustate
+p2join
+wait 1.5
+menustate
+lobbyconfirm
+wait 1.5
+menustate
+p1pick Monke
+p2press dpad right
+wait 0.4
+p2press a
+wait 0.5
+menustate
+p1confirm
+wait 2.5
+menustate
+p1press
+wait 1.5
+p1press
+wait 1.5
+p1press
+wait 15
+menustate
+shot mainmenu_run2
+godp1
+godp2
+clear
+clearloot
+nopowerups
+place 40
+wait 1
+items
+eventcheck run2-before-items
+item p1 MoldyCheese 3
+item p1 CursedDoll 3
+item p1 SoulHarvester 3
+item p1 SluttyCannon 3
+item p2 MoldyCheese 3
+item p2 CursedDoll 3
+item p2 SoulHarvester 3
+item p2 SluttyCannon 3
+wait 1
+eventcheck run2
+srccount reset
+spawn p1 Skeleton 8 6
+spawn p2 Skeleton 8 6
+wait 10
+srccount run2
+eventcheck run2-after
+invcheck run2
+quit

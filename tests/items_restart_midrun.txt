@@ -1,0 +1,61 @@
+﻿chars Monke Monke tier 1 map Forest
+# Players' report: items stop working with two players after restarting. Run 1 with the four items on both players,
+# then the mid-run restart (pause menu / quick reset: MapController.RestartRun), run 2 the same. Damage per player
+# and source in each run (srccount), who listens to the shared enemy events (eventcheck).
+#
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+place 40
+wait 1
+item p1 MoldyCheese 3
+item p1 CursedDoll 3
+item p1 SoulHarvester 3
+item p1 SluttyCannon 3
+item p2 MoldyCheese 3
+item p2 CursedDoll 3
+item p2 SoulHarvester 3
+item p2 SluttyCannon 3
+wait 1
+eventcheck run1
+srccount reset
+spawn p1 Skeleton 8 6
+spawn p2 Skeleton 8 6
+wait 10
+srccount run1
+eventcheck run1-after
+clear
+wait 1
+runrestart
+wait 18
+shot restart_run2
+godp1
+godp2
+clear
+clearloot
+nopowerups
+place 40
+wait 1
+items
+eventcheck run2-before-items
+item p1 MoldyCheese 3
+item p1 CursedDoll 3
+item p1 SoulHarvester 3
+item p1 SluttyCannon 3
+item p2 MoldyCheese 3
+item p2 CursedDoll 3
+item p2 SoulHarvester 3
+item p2 SluttyCannon 3
+wait 1
+eventcheck run2
+srccount reset
+spawn p1 Skeleton 8 6
+spawn p2 Skeleton 8 6
+wait 10
+srccount run2
+eventcheck run2-after
+quit

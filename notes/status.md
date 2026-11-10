@@ -2,6 +2,46 @@
 
 Goal: 2-player local splitscreen for Megabonk (single-player Unity game).
 
+## Players' reports after 1.0.3 (2026-11-09) - TEMP commands in AutotestRestart.cs (eventcheck, srccount, invcheck)
+- "After restarting once, Cheese / Cursed Doll / Soul Harvester / Slutty Cannon stop working with two players":
+  death-screen restart (tests\items_restart.txt) and the pause menu's RestartRun (items_restart_midrun.txt): NOT
+  reproduced. Quit to the MAIN MENU + new run (tests\items_mainmenu.txt, 'gomain' = the game's TransitionUI.LoadMenu):
+  REPRODUCED - run 2 on-hit item lists 0 for both players, Cheese / Cannon / Doll no damage. Cause: ItemEvents had
+  P1's ToxicBarrelEffect / HolyBookEffect listeners of ItemBase.A_ItemAdded in its own list when the run's scene went;
+  their OnDestroy (-= Refresh) found nothing, and ItemEvents.Reset (at the next run start) put them back with their
+  objects destroyed -> every AddItem threw in ToxicBarrelEffect.Refresh (NullReference, LogOutput.log) before the
+  item was set up. FIXED: Reset only puts back listeners whose object exists (items: of P1's current inventory) -
+  "reset: 5 P1 listener(s) ... not put back", run 2 on-hit 2/2 and all four items deal damage for both.
+  Every item was affected (the throw was in AddItem itself), not only these four.
+- Leftovers between runs - 'deadlisteners' scans all ~150 static game events (tests\items_deadlisteners.txt: 30
+  listener items on both players, run 1 -> main menu -> run 2 -> death-screen restart -> run 3). FIXED:
+  - P2's item holder was never cleaned up (kept ticking "on other"): P2Inventory.ResetForNewRun runs the game's
+    ItemInventory.Cleanup on it.
+  - MyPlayer.Instance points at the destroyed player between runs and C#'s ?. doesn't see it: P2Items.P1Items now
+    uses Unity's check (the old run's items passed for P1's current ones).
+  - The game's own Cleanup of Demonic Blood / Demonic Soul / Joe's Dagger subscribes them once more (A_EnemyDied
+    10 -> 12 around P2's Cleanup): ItemEvents.Reset takes items of no current inventory and destroyed objects off
+    the routed events. After: no item leftovers on any game event on either route, AddItem errors 0.
+  - Left alone (the game's own, the mod doesn't touch them): destroyed DeathScreen.OnBossDefeated on
+    InteractableBossSpawner.A_BossDefeated and FullMap.OnMapToggle on FullMapUi.A_Toggle, +2 per run.
+  - Unexplained, probably a test artifact: P2's Holy Book did ~3000 damage in run 2 (after the main menu) vs ~30 in
+    runs 1 and 3, all three times (Holy Book scales with healing; the test's god mode sets HP to 1,000,000).
+- User: P1 shows the game's item popup (icon + amount over the player) when an item is added, P2 didn't. The muted
+  ItemInventory.A_ItemAdded skipped EffectManager.OnItemAdded for P2. FIXED: P2Items.AfterChange plays it for P2's
+  AddItem and moves the new 'ChestItem(Clone)' to the same spot in front of P2's camera (tests\item_pickup_fx.txt).
+- P2 can't take damage in Forest stage 2: still not reproduced, waiting for players' details.
+- User: after going back to the main menu, P2's skin row only had one 50-gold skin. Character select opened after a run
+  fills P1's skin row a moment after the mod copies the panel ("P1's skin row has no containers"), so P2's row was
+  never bound and kept the copied leftover. FIXED (P2Select.BindSkinsLate: bound once P1's row is filled, a
+  script-free copy of P1's container as the template). tests\skins_mainmenu.txt: "bound late (after 1 tries)", P2's
+  row shows P2's usable skins. Seen in passing, not changed: P2's info panel shows rank / runs text as copied
+  (Rank 5 / 200 runs next to P1's Rank 2 / 32 runs) - BindInfo doesn't update those two texts.
+- Player: the shared screen doesn't split soon enough. SplitDistance 60 -> 30, MergeDistance 48 -> 24 (40/32 first,
+  user: a little more; P2Camera - configs holding an old default 60/48, 40/32 or 15/12 are moved to the new ones;
+  user: no split/merge spam - 2 s cooldown after a switch, P2Camera.SwitchCooldown; a player going down still
+  switches at once, a player's own value stays). In 1.0.4.
+- Known, harmless: PlayerMovement.Update NRE spam (~150 at the main menu per visit).
+
 ## Players' reports after 1.0.2 (2026-11-03) - tests\bug_*.txt, new commands in AutotestBugs.cs
 - Chest mash: REPRODUCED (8 presses -> 7 free P1 windows), FIXED (P2Interact: no presses while MyTime.paused, guard on
   opening/same chest). Jump after level-up pick: REPRODUCED (5.8 m), FIXED (P2Movement.FollowA/WaitForJumpRelease).

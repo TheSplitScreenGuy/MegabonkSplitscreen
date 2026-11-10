@@ -1,0 +1,23 @@
+chars Monke Monke tier 1 map Forest
+# User: after going back to the main menu, P2's skin row only showed one 50-gold skin (not P1's skins). A run, quit to
+# the main menu, character select again: P2's skin row vs P1's (menustate: skin cursor of N; 'skins Monke').
+wait 2
+skins Monke
+gomain
+wait 6
+waitselected B_Play 20
+p1press
+wait 2
+lobbyconfirm
+wait 2
+p1pick Monke
+wait 2
+menustate
+skins Monke
+shot skins_after_menu
+p1pick Fox
+wait 1.5
+menustate
+skins Fox
+shot skins_after_menu_fox
+quit

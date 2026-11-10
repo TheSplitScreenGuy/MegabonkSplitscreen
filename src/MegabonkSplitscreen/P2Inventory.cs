@@ -251,6 +251,18 @@ internal static class P2Inventory
     {
         if (heldItems != null) SwapOutItems();
         if (heldStats != null) SwapOutStats();
+        // The game's end-of-run cleanup of P2's item holder (P1's gets it from the game): its own LateFixedUpdate
+        // subscription and its items' static-event subscriptions go. v1.0.3 test: without it every finished run's P2
+        // holder kept ticking ("OnLateFixedUpdate on other") for the rest of the session.
+        if (Items != null)
+        {
+            var old = Items;
+            Items = null;   // the mod's P2 item hooks treat it as nobody's while it cleans up
+            static int N(Il2CppSystem.Delegate d) => d == null ? 0 : d.GetInvocationList().Length;
+            int died0 = N(Assets.Scripts.Actors.Enemies.Enemy.A_EnemyDied), dmg0 = N(Assets.Scripts.Actors.Enemies.Enemy.A_Damage);
+            try { old.Cleanup(); ModLog.Info($"P2's item holder of the last run cleaned up (the game's ItemInventory.Cleanup); Enemy.A_EnemyDied listeners {died0} -> {N(Assets.Scripts.Actors.Enemies.Enemy.A_EnemyDied)}, A_Damage {dmg0} -> {N(Assets.Scripts.Actors.Enemies.Enemy.A_Damage)}"); }
+            catch (Exception e) { ModLog.Warn($"P2's item holder cleanup: {e.Message}"); }
+        }
         Weapons = null;
         TomesInv = null;
         Items = null;

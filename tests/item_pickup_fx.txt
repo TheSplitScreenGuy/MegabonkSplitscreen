@@ -1,0 +1,22 @@
+chars Monke Monke tier 1 map Forest
+# User: when an item is added, P1 gets the game's pickup effect, P2 doesn't. P1 gets one, then P2, shots right after.
+wait 2
+godp1
+godp2
+clear
+nopowerups
+place 40
+wait 2
+item p1 MoldyCheese 1
+wait 0.3
+shot pickupfx_p1
+wait 3
+item p2 MoldyCheese 1
+wait 0.3
+shot pickupfx_p2
+wait 3
+item p2 SluttyCannon 1
+wait 0.6
+shot pickupfx_p2b
+wait 2
+quit

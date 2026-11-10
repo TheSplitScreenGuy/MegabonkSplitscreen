@@ -1,0 +1,267 @@
+chars Monke Monke tier 1 map Forest
+# Every game event checked for dead listeners (destroyed objects, items of an earlier run) after each way of starting
+# a new run: run 1 with 30 listener-type items on both players -> quit to main menu -> run 2 (same items) -> both die,
+# death-screen restart -> run 3. srccount per run shows the items' damage per player.
+wait 2
+godp1
+godp2
+clear
+clearloot
+nopowerups
+place 40
+wait 1
+deadlisteners run1-start
+item p1 MoldyCheese 1
+item p2 MoldyCheese 1
+item p1 CursedDoll 1
+item p2 CursedDoll 1
+item p1 SoulHarvester 1
+item p2 SoulHarvester 1
+item p1 SluttyCannon 1
+item p2 SluttyCannon 1
+item p1 DemonicBlood 1
+item p2 DemonicBlood 1
+item p1 DemonicSoul 1
+item p2 DemonicSoul 1
+item p1 DemonBlade 1
+item p2 DemonBlade 1
+item p1 JoesDagger 1
+item p2 JoesDagger 1
+item p1 Kevin 1
+item p2 Kevin 1
+item p1 Borgar 1
+item p2 Borgar 1
+item p1 Ghost 1
+item p2 Ghost 1
+item p1 CreditCardRed 1
+item p2 CreditCardRed 1
+item p1 CreditCardGreen 1
+item p2 CreditCardGreen 1
+item p1 SpeedBoi 1
+item p2 SpeedBoi 1
+item p1 Gasmask 1
+item p2 Gasmask 1
+item p1 ToxicBarrel 1
+item p2 ToxicBarrel 1
+item p1 HolyBook 1
+item p2 HolyBook 1
+item p1 Mirror 1
+item p2 Mirror 1
+item p1 ElectricPlug 1
+item p2 ElectricPlug 1
+item p1 Campfire 1
+item p2 Campfire 1
+item p1 GrandmasSecretTonic 1
+item p2 GrandmasSecretTonic 1
+item p1 LightningOrb 1
+item p2 LightningOrb 1
+item p1 IceCube 1
+item p2 IceCube 1
+item p1 Dragonfire 1
+item p2 Dragonfire 1
+item p1 EchoShard 1
+item p2 EchoShard 1
+item p1 BobsLantern 1
+item p2 BobsLantern 1
+item p1 Pumpkin 1
+item p2 Pumpkin 1
+item p1 Beacon 1
+item p2 Beacon 1
+item p1 UnstableTransfusion 1
+item p2 UnstableTransfusion 1
+item p1 Bonker 1
+item p2 Bonker 1
+wait 1
+deadlisteners items-given
+srccount reset
+spawn p1 Skeleton 8 6
+spawn p2 Skeleton 8 6
+wait 10
+srccount run1
+deadlisteners run1
+clear
+wait 1
+gomain
+wait 6
+waitselected B_Play 20
+p1press
+wait 2
+lobbyconfirm
+wait 1.5
+p1pick Monke
+p2press dpad right
+wait 0.4
+p2press a
+wait 0.5
+p1confirm
+wait 2.5
+p1press
+wait 1.5
+p1press
+wait 1.5
+p1press
+wait 15
+menustate
+deadlisteners run2-start
+invcheck run2-start
+godp1
+godp2
+clear
+clearloot
+nopowerups
+place 40
+wait 1
+item p1 MoldyCheese 1
+item p2 MoldyCheese 1
+item p1 CursedDoll 1
+item p2 CursedDoll 1
+item p1 SoulHarvester 1
+item p2 SoulHarvester 1
+item p1 SluttyCannon 1
+item p2 SluttyCannon 1
+item p1 DemonicBlood 1
+item p2 DemonicBlood 1
+item p1 DemonicSoul 1
+item p2 DemonicSoul 1
+item p1 DemonBlade 1
+item p2 DemonBlade 1
+item p1 JoesDagger 1
+item p2 JoesDagger 1
+item p1 Kevin 1
+item p2 Kevin 1
+item p1 Borgar 1
+item p2 Borgar 1
+item p1 Ghost 1
+item p2 Ghost 1
+item p1 CreditCardRed 1
+item p2 CreditCardRed 1
+item p1 CreditCardGreen 1
+item p2 CreditCardGreen 1
+item p1 SpeedBoi 1
+item p2 SpeedBoi 1
+item p1 Gasmask 1
+item p2 Gasmask 1
+item p1 ToxicBarrel 1
+item p2 ToxicBarrel 1
+item p1 HolyBook 1
+item p2 HolyBook 1
+item p1 Mirror 1
+item p2 Mirror 1
+item p1 ElectricPlug 1
+item p2 ElectricPlug 1
+item p1 Campfire 1
+item p2 Campfire 1
+item p1 GrandmasSecretTonic 1
+item p2 GrandmasSecretTonic 1
+item p1 LightningOrb 1
+item p2 LightningOrb 1
+item p1 IceCube 1
+item p2 IceCube 1
+item p1 Dragonfire 1
+item p2 Dragonfire 1
+item p1 EchoShard 1
+item p2 EchoShard 1
+item p1 BobsLantern 1
+item p2 BobsLantern 1
+item p1 Pumpkin 1
+item p2 Pumpkin 1
+item p1 Beacon 1
+item p2 Beacon 1
+item p1 UnstableTransfusion 1
+item p2 UnstableTransfusion 1
+item p1 Bonker 1
+item p2 Bonker 1
+wait 1
+deadlisteners run2-items
+srccount reset
+spawn p1 Skeleton 8 6
+spawn p2 Skeleton 8 6
+wait 10
+srccount run2
+clear
+wait 1
+godp2 off
+godp1 off
+kill p2
+wait 3
+kill p1
+wait 10
+restart
+wait 18
+deadlisteners run3-start
+godp1
+godp2
+clear
+clearloot
+nopowerups
+place 40
+wait 1
+item p1 MoldyCheese 1
+item p2 MoldyCheese 1
+item p1 CursedDoll 1
+item p2 CursedDoll 1
+item p1 SoulHarvester 1
+item p2 SoulHarvester 1
+item p1 SluttyCannon 1
+item p2 SluttyCannon 1
+item p1 DemonicBlood 1
+item p2 DemonicBlood 1
+item p1 DemonicSoul 1
+item p2 DemonicSoul 1
+item p1 DemonBlade 1
+item p2 DemonBlade 1
+item p1 JoesDagger 1
+item p2 JoesDagger 1
+item p1 Kevin 1
+item p2 Kevin 1
+item p1 Borgar 1
+item p2 Borgar 1
+item p1 Ghost 1
+item p2 Ghost 1
+item p1 CreditCardRed 1
+item p2 CreditCardRed 1
+item p1 CreditCardGreen 1
+item p2 CreditCardGreen 1
+item p1 SpeedBoi 1
+item p2 SpeedBoi 1
+item p1 Gasmask 1
+item p2 Gasmask 1
+item p1 ToxicBarrel 1
+item p2 ToxicBarrel 1
+item p1 HolyBook 1
+item p2 HolyBook 1
+item p1 Mirror 1
+item p2 Mirror 1
+item p1 ElectricPlug 1
+item p2 ElectricPlug 1
+item p1 Campfire 1
+item p2 Campfire 1
+item p1 GrandmasSecretTonic 1
+item p2 GrandmasSecretTonic 1
+item p1 LightningOrb 1
+item p2 LightningOrb 1
+item p1 IceCube 1
+item p2 IceCube 1
+item p1 Dragonfire 1
+item p2 Dragonfire 1
+item p1 EchoShard 1
+item p2 EchoShard 1
+item p1 BobsLantern 1
+item p2 BobsLantern 1
+item p1 Pumpkin 1
+item p2 Pumpkin 1
+item p1 Beacon 1
+item p2 Beacon 1
+item p1 UnstableTransfusion 1
+item p2 UnstableTransfusion 1
+item p1 Bonker 1
+item p2 Bonker 1
+wait 1
+deadlisteners items-given
+srccount reset
+spawn p1 Skeleton 8 6
+spawn p2 Skeleton 8 6
+wait 10
+srccount run3
+deadlisteners run3
+quit

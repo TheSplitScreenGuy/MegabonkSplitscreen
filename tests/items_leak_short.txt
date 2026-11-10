@@ -1,0 +1,31 @@
+chars Monke Monke tier 1 map Forest
+# Old Demonic Blood / Demonic Soul / Joe's Dagger back on the enemy events after a run (dead-listener scan): run 1
+# with the three on both players, both die, death-screen restart, scan.
+wait 2
+godp1
+godp2
+clear
+nopowerups
+place 40
+wait 1
+item p1 DemonicBlood 1
+item p2 DemonicBlood 1
+item p1 DemonicSoul 1
+item p2 DemonicSoul 1
+item p1 JoesDagger 1
+item p2 JoesDagger 1
+wait 1
+eventcheck run1
+deadlisteners run1
+godp2 off
+godp1 off
+kill p2
+wait 3
+kill p1
+wait 10
+eventcheck deathscreen
+deadlisteners deathscreen
+restart
+wait 18
+deadlisteners run2-start
+quit

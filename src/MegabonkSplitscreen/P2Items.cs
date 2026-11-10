@@ -197,7 +197,10 @@ internal static class P2Items
     {
         get
         {
-            var now = MyPlayer.Instance?.inventory?.itemInventory;
+            // Unity's own check: between runs MyPlayer.Instance still points at the last run's destroyed player (C#'s
+            // ?. doesn't see that), whose inventory then passed for P1's current one (v1.0.3 dead-listener scan)
+            var mp = MyPlayer.Instance;
+            var now = mp != null ? mp.inventory?.itemInventory : null;
             if (now != null && !IsP2s(now)) p1Real = now;
             else if (now == null) p1Real = null;
             return p1Real;
@@ -240,13 +243,43 @@ internal static class P2Items
         }
     }
 
-    private static Exception AfterChange(ItemInventory __instance, Exception __exception, Change __state)
+    private static int pickupFxLogs;
+    private static Exception AfterChange(ItemInventory __instance, Exception __exception, Change __state, object[] __args, System.Reflection.MethodBase __originalMethod)
     {
         if (IsP2s(__instance) && changeDepth > 0) changeDepth--;
         // Either player's new item: its listeners on shared events go to the owner routing right away
         if (P2Inventory.Items != null && (IsP1s(__instance) || (IsP2s(__instance) && changeDepth == 0)))
             try { ItemEvents.Keep(now: true); } catch (Exception e) { ModLog.Warn($"[items] event routing after an item change: {e.Message}"); }
         if (__state == null) return __exception;
+        // P2's pickup effect (user: P1 shows an effect when an item is added, P2 doesn't): the muted
+        // ItemInventory.A_ItemAdded also skipped the game's EffectManager.OnItemAdded for P2 - played here while P1's
+        // object still stands at P2's spot (what it attaches to "the player" goes to P2's body below)
+        if (__exception == null && __originalMethod?.Name == "AddItem" && __args?.Length > 0 && __args[0] is EItem added && EffectManager.Instance != null)
+            try
+            {
+                // The game's popup is a 'ChestItem(Clone)' (icon + amount) placed in front of P1's camera: moved to the
+                // same spot in front of P2's camera (split view; one shared camera = nothing to move)
+                var before = new HashSet<int>();
+                foreach (var ci in UnityEngine.Object.FindObjectsOfType<ChestItem>(true)) before.Add(ci.GetInstanceID());
+                EffectManager.Instance.OnItemAdded(added);
+                var p1Cam = PlayerCamera.Instance?.camera;
+                var p2Cam = P2Camera.Cam;
+                bool split = p1Cam != null && p2Cam != null && p2Cam.isActiveAndEnabled && p2Cam != p1Cam;
+                foreach (var ci in UnityEngine.Object.FindObjectsOfType<ChestItem>(true))
+                {
+                    if (before.Contains(ci.GetInstanceID())) continue;
+                    var t = ci.transform;
+                    var was = t.position;
+                    if (split)
+                    {
+                        var c1 = p1Cam.transform; var c2 = p2Cam.transform;
+                        t.SetPositionAndRotation(c2.TransformPoint(c1.InverseTransformPoint(t.position)), c2.rotation * (Quaternion.Inverse(c1.rotation) * t.rotation));
+                    }
+                    if (pickupFxLogs < 4) ModLog.Info($"[items] P2's pickup popup for {added}: '{ci.name}' at {was} (P1's camera {p1Cam?.transform.position}, P1 {MyPlayer.Instance?.transform.position}, P2 {P2Movement.Pm?.transform.position}) -> {(split ? $"{t.position}, in front of P2's camera {p2Cam.transform.position}" : "left (one camera)")}");
+                }
+                pickupFxLogs++;
+            }
+            catch (Exception e) { ModLog.Warn($"[items] P2's pickup effect for {added}: {e.Message}"); }
         if (__state.moved && MyPlayer.Instance != null) MyPlayer.Instance.transform.position = __state.p1Pos;
         if (__state.p1Pm != null) PlayerMovement.Instance = __state.p1Pm;
         if (__state.statsEntered) P2Inventory.Exit();

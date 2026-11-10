@@ -36,6 +36,23 @@ internal static partial class Autotest
                     Report($"fix {what} {(on ? "ON" : "OFF")}");
                 }
                 return true;
+            case "runrestart":   // mid-run restart, like the pause menu's / quick-reset's (the game's MapController.RestartRun)
+                Cheat(() => { Report("runrestart: the game's MapController.RestartRun()"); Assets.Scripts.Managers.MapController.RestartRun(); });
+                return true;
+            case "gomain":   // quit to the main menu (the game's TransitionUI.LoadMenu; PauseUi.GoToMain only shows the pause window's main page)
+                Cheat(() => { var t = Object.FindObjectOfType<TransitionUI>(); Report($"gomain: TransitionUI {(t != null ? "found" : "missing")}"); t?.LoadMenu(); });
+                return true;
+            case "deadlisteners": Cheat(() => Report($"deadlisteners {(a.Length > 1 ? a[1] : "")}: {DeadListeners()}")); return true;
+            case "invcheck": Cheat(() => Report($"invcheck {(a.Length > 1 ? a[1] : "")}: {InvCheck()}")); return true;
+            case "eventcheck": Cheat(() => Report($"eventcheck {(a.Length > 1 ? a[1] : "")}: {EventCheck()}")); return true;
+            case "srccount":   // srccount reset | <label>: damage per source (the game's Enemy.A_Damage) since the reset
+                Cheat(() =>
+                {
+                    EnsureSrcCounter();
+                    if (a.Length > 1 && a[1] == "reset") { srcCounts.Clear(); Report("srccount reset"); return; }
+                    Report($"srccount {(a.Length > 1 ? a[1] : "")}: {(srcCounts.Count == 0 ? "nothing" : string.Join(", ", srcCounts.OrderByDescending(kv => kv.Value).Select(kv => $"{kv.Key} {kv.Value:F0}")))}");
+                });
+                return true;
             case "chestq": Cheat(() => Report($"chestq {(a.Length > 1 ? string.Join(" ", a.Skip(1)) : "")}: {P2Interact.Counters()}")); return true;
             case "goldwatch":
                 goldWatch = a.Length < 2 || a[1] != "off";

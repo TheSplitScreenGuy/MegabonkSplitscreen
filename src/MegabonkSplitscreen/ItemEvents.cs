@@ -187,20 +187,68 @@ internal static class ItemEvents
     private static object CastTo(Il2CppSystem.Delegate d, Type t) =>
         typeof(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase).GetMethod(nameof(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase.Cast))!.MakeGenericMethod(t).Invoke(d, null);
 
+    // A P1 listener that may go back on the game's event: its object still exists and still belongs to P1's player.
+    // v1.0.3 report "after restarting once, Cheese / Cursed Doll / Soul Harvester / Slutty Cannon stop working": quit to
+    // the main menu, new run - the run's scene went away while P1's ToxicBarrelEffect / HolyBookEffect listeners sat in
+    // the mod's list, so their own OnDestroy (-= Refresh) found nothing to take off; Reset then put them back on
+    // ItemBase.A_ItemAdded with their objects destroyed. Every AddItem of the next run threw inside the game's
+    // ToxicBarrelEffect.Refresh (NullReference in get_gameObject) before the item was filed as on-hit / set up - for
+    // both players. The restart buttons reset before the scene goes, so they never hit it.
+    private static bool Alive(Il2CppSystem.Delegate l)
+    {
+        var t = l?.Target;
+        if (t == null) return false;
+        var uo = t.TryCast<UnityEngine.Object>();
+        if (!ReferenceEquals(uo, null)) return uo;   // Unity's own check: false for a destroyed scene object
+        var item = t.TryCast<ItemBase>();
+        if (item != null)
+        {
+            var p1 = P2Items.P1Items;   // an item of an earlier run's inventory: gone with it
+            return p1 != null && item.itemInventoryRef != null && item.itemInventoryRef.Pointer == p1.Pointer;
+        }
+        return true;
+    }
+
+    // A listener on the game's event left over from an earlier run: a destroyed object, or an item of neither player's
+    // current inventory (anything else - the game's own listeners - stays)
+    private static bool Leftover(Il2CppSystem.Delegate l)
+    {
+        var t = l?.Target;
+        if (t == null) return false;
+        var uo = t.TryCast<UnityEngine.Object>();
+        if (!ReferenceEquals(uo, null)) return !uo;
+        var item = t.TryCast<ItemBase>();
+        if (item == null) return false;
+        var inv = item.itemInventoryRef;
+        var p1 = P2Items.P1Items;
+        var p2 = P2Inventory.Items;
+        return inv == null || !((p1 != null && inv.Pointer == p1.Pointer) || (p2 != null && inv.Pointer == p2.Pointer));
+    }
+
     public static void Reset()
     {
         // The mod's listeners come off the events; P1's listeners go back on (P1's effect scripts stay with P1's player)
+        // - only those whose objects are still there
+        int dropped = 0;
         foreach (var r in routes)
         {
             try
             {
                 var ev = r.prop.GetValue(null) as Il2CppSystem.Delegate;
-                var keep = Remove(ev, r.forwarder);
-                if (r.p1 != null) keep = Add(keep, r.p1);
+                // Also off the event itself: items of no current player's inventory (v1.0.3 scan: the game's own Cleanup of
+                // Demonic Blood / Demonic Soul / Joe's Dagger subscribes them once more - 10 -> 12 listeners when P2's
+                // holder was cleaned up - so last run's items kept answering every enemy death) and destroyed objects
+                Il2CppSystem.Delegate keep = null;
+                foreach (var l in Remove(ev, r.forwarder)?.GetInvocationList() ?? Array.Empty<Il2CppSystem.Delegate>())
+                    if (Leftover(l)) dropped++; else keep = Add(keep, l);
+                if (r.p1 != null)
+                    foreach (var l in r.p1.GetInvocationList())
+                        if (Alive(l)) keep = Add(keep, l); else dropped++;
                 r.prop.SetValue(null, keep == null ? null : CastTo(keep, r.prop.PropertyType));
             }
             catch { }
             r.p1 = r.p2 = null;
         }
+        if (dropped > 0) ModLog.Info($"[itemevents] reset: {dropped} listener(s) of objects / items gone with the last run taken off");
     }
 }

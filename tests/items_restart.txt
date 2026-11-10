@@ -1,0 +1,68 @@
+chars Monke Monke tier 1 map Forest
+# Players' report: "works perfectly when freshly installed; after restarting once, Cheese, Cursed Doll, Soul Harvester
+# and Slutty Cannon no longer work with two players". Run 1: both players get the four items, fight a ring of
+# skeletons each (40 m apart); damage per source + who listens to the shared enemy events. Both go down, the death
+# screen's restart, run 2: the same again. The item sources' damage should be about the same in both runs.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+place 40
+wait 1
+item p1 MoldyCheese 3
+item p1 CursedDoll 3
+item p1 SoulHarvester 3
+item p1 SluttyCannon 3
+item p2 MoldyCheese 3
+item p2 CursedDoll 3
+item p2 SoulHarvester 3
+item p2 SluttyCannon 3
+wait 1
+eventcheck run1
+srccount reset
+spawn p1 Skeleton 8 6
+spawn p2 Skeleton 8 6
+wait 10
+srccount run1
+eventcheck run1-after
+clear
+wait 1
+godp2 off
+godp1 off
+kill p2
+wait 3
+kill p1
+wait 10
+shot restart_deathscreen
+restart
+wait 18
+shot restart_run2
+godp1
+godp2
+clear
+clearloot
+nopowerups
+place 40
+wait 1
+items
+eventcheck run2-before-items
+item p1 MoldyCheese 3
+item p1 CursedDoll 3
+item p1 SoulHarvester 3
+item p1 SluttyCannon 3
+item p2 MoldyCheese 3
+item p2 CursedDoll 3
+item p2 SoulHarvester 3
+item p2 SluttyCannon 3
+wait 1
+eventcheck run2
+srccount reset
+spawn p1 Skeleton 8 6
+spawn p2 Skeleton 8 6
+wait 10
+srccount run2
+eventcheck run2-after
+quit

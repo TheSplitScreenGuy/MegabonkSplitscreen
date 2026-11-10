@@ -111,7 +111,7 @@ internal static class P2Camera
     // move relative to that view). Apart (> SplitDistance): the left/right split as before.
     // Smooth without a shader (the game can't compile new ones): over TransitionTime both cameras glide to the shared
     // pose while the divider slides to the right edge (merging), or the reverse (splitting).
-    private static float mergeDistance = 48f, splitDistance = 60f;
+    private static float mergeDistance = 24f, splitDistance = 30f;
     private const float OldSplitDistance = 15f;   // before v1.0.0-alpha: the close-up pull-back and the height limit
     private const float FitMargin = 3f;           // metres around the players in the shared view
     private const float TransitionTime = 0.6f;
@@ -142,14 +142,15 @@ internal static class P2Camera
             "Lego-style camera: one shared screen while the players are close, splitting when they move apart. " +
             "False = split screen all the time. Also switched in the pause menu (CAMERA button), saved here.");
         mergeEnabled = mergeEntry.Value;
-        // v1.0.0-alpha (user: split at about 4x the distance): 15 -> 60, 12 -> 48. A config still holding the old
-        // defaults gets the new ones; a value the player set stays.
-        var splitEntry = config.Bind("Camera", "SplitDistance", 60f,
+        // v1.0.0-alpha (user: split at about 4x the distance): 15 -> 60, 12 -> 48. v1.0.4 (player: the shared screen
+        // doesn't split soon enough): 60 -> 30, 48 -> 24 (40/32 tried first, user: a little more). A config still
+        // holding an old default gets the new one; a value the player set stays.
+        var splitEntry = config.Bind("Camera", "SplitDistance", 30f,
             "Distance between the players at which the shared screen splits.");
-        var mergeDistEntry = config.Bind("Camera", "MergeDistance", 48f,
+        var mergeDistEntry = config.Bind("Camera", "MergeDistance", 24f,
             "Distance at which the split screens merge again (a bit below SplitDistance so it doesn't flicker).");
-        if (Mathf.Approximately(splitEntry.Value, 15f)) splitEntry.Value = 60f;
-        if (Mathf.Approximately(mergeDistEntry.Value, 12f)) mergeDistEntry.Value = 48f;
+        foreach (var old in new[] { 15f, 60f, 40f }) if (Mathf.Approximately(splitEntry.Value, old)) splitEntry.Value = 30f;
+        foreach (var old in new[] { 12f, 48f, 32f }) if (Mathf.Approximately(mergeDistEntry.Value, old)) mergeDistEntry.Value = 24f;
         splitDistance = splitEntry.Value;
         mergeDistance = mergeDistEntry.Value;
         if (mergeDistance >= splitDistance) mergeDistance = splitDistance * 0.8f;
@@ -416,13 +417,18 @@ internal static class P2Camera
         // The game's camera busy (portal entrance): keep whatever it is (a run opens merged), decide again after
         bool decide = SafeState(pc) == PlayerCamera.ECameraState.Player3rd;
         bool before = wantMerged;
+        // v1.0.4 (user: it shouldn't spam split/merge over and over): after a switch, no distance / height switch for
+        // SwitchCooldown seconds. A player going down still switches at once.
+        bool cooling = Time.unscaledTime - lastSwitch < SwitchCooldown;
         // v0.46.3 (user: when a player is dead, only show the alive player's camera): one full-screen view, centred on
         // the one alive (Solo, in the shared pose), whatever the distance
         if (Solo != 0) wantMerged = true;
+        else if (cooling) { }
         else if (!can) wantMerged = false;
         else if (!decide) { }
         else if (sep < mergeDistance) wantMerged = true;
         else if (sep > splitDistance) wantMerged = false;
+        if (wantMerged != before) lastSwitch = Time.unscaledTime;
         if (wantMerged != before && mergeLogs++ < 30)
             ModLog.Info($"[cam] {(wantMerged ? "merging" : "splitting")} (players {sep:F1} apart; P2 dead {P2Health.IsDead}, " +
                         $"camera state {SafeState(pc)}, height difference {Mathf.Abs(p1Head.y - p2Head.y):F1})");
@@ -430,6 +436,8 @@ internal static class P2Camera
         merge = Mathf.MoveTowards(merge, wantMerged ? 1f : 0f, step);
     }
     private static int mergeLogs;
+    private const float SwitchCooldown = 2f;
+    private static float lastSwitch = -100f;
     private static Vector3 cleanLocal;
     private static bool haveLocal;
 

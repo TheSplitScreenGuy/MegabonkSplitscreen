@@ -217,29 +217,71 @@ internal static class P2Select
         foreach (var g in skinCopies) if (g != null) Object.Destroy(g);
         skinCopies.Clear();
         skinGrid = null;
+        skinMenu = menu;
+        skinPanel = panel;
+        lateTries = 0;
         var list = info.skinSelection != null ? info.skinSelection.containers : null;
         if (list == null || list.Count == 0 || list[0] == null)
         {
-            ModLog.Warn("P2 skins: P1's skin row has no containers, P2's row stays as copied");
+            // v1.0.4 (user: after going back to the main menu P2 only had one 50-gold skin): character select opened
+            // again after a run fills P1's skin row a moment later, so the row is bound late (BindSkinsLate)
+            ModLog.Info("P2 skins: P1's skin row not filled yet - P2's row is bound once it is");
             return;
         }
         var c0 = list[0];
         var copy = Mirror(menu.transform, c0.transform, panel.transform);
         if (copy == null)
         {
-            ModLog.Warn("P2 skins: P1's skin container not found in the copy");
+            ModLog.Info("P2 skins: P1's skin container not in the copy - P2's row is bound from P1's row");
             return;
         }
+        Paths(c0);
+        skinGrid = copy.parent;
+        skinTemplate = copy.gameObject;
+        for (int i = 0; i < skinGrid.childCount; i++) skinGrid.GetChild(i).gameObject.SetActive(false);   // P1's skins, copied
+        ModLog.Info($"P2 skins: skin row bound ('{skinGrid.name}', {list.Count} copied containers hidden; icon {iconPath != null}, locked {lockedPath != null}, not-selected {notSelectedPath != null})");
+    }
+
+    private static CharacterMenu skinMenu;
+    private static GameObject skinPanel;
+    private static int lateTries;
+
+    // P2's row from P1's row as it is now: the copy's grid (same place as P1's grid), a script-free copy of P1's first
+    // skin container as the template, every child the copy had hidden (P1's row as it was when copied)
+    private static void BindSkinsLate()
+    {
+        if (skinGrid != null || skinMenu == null || skinPanel == null || lateTries > 600) return;
+        lateTries++;
+        var list = Object.FindObjectOfType<CharacterInfoUI>()?.skinSelection?.containers;
+        if (list == null || list.Count == 0 || list[0] == null) return;
+        var c0 = list[0];
+        var grid = Mirror(skinMenu.transform, c0.transform.parent, skinPanel.transform);
+        if (grid == null) { if (lateTries == 1) ModLog.Warn("P2 skins: P1's skin grid not found in the copy"); lateTries = 1000; return; }
+        Paths(c0);
+        var hold = new GameObject("hold");
+        hold.SetActive(false);
+        var tpl = Object.Instantiate(c0.gameObject, hold.transform);
+        foreach (var mb in tpl.GetComponentsInChildren<MonoBehaviour>(true))
+            if (mb != null && mb.GetIl2CppType().Assembly.GetName().Name == "Assembly-CSharp") Object.DestroyImmediate(mb);
+        for (int i = 0; i < grid.childCount; i++) grid.GetChild(i).gameObject.SetActive(false);   // the copy's old row
+        tpl.SetActive(false);
+        tpl.transform.SetParent(grid, false);
+        tpl.name = "MegabonkSplitscreen_P2SkinTemplate";
+        Object.Destroy(hold);
+        skinGrid = grid;
+        skinTemplate = tpl;
+        ModLog.Info($"P2 skins: skin row bound late ('{grid.name}', after {lateTries} tries; icon {iconPath != null}, locked {lockedPath != null}, not-selected {notSelectedPath != null})");
+        if (Picked != null) SkinForPick(Picked);   // P2's row for P2's current character
+    }
+
+    private static void Paths(SkinContainer c0)
+    {
         var root = c0.transform;
         iconPath = PathOf(root, c0.skinIcon);
         lockedPath = PathOf(root, c0.locked != null ? c0.locked.transform : null);
         notSelectedPath = PathOf(root, c0.notSelectedOverlay != null ? c0.notSelectedOverlay.transform : null);
         purchasePath = PathOf(root, c0.purchaseOverlay != null ? c0.purchaseOverlay.transform : null);
         pricePath = PathOf(root, c0.t_price);
-        skinGrid = copy.parent;
-        skinTemplate = copy.gameObject;
-        for (int i = 0; i < skinGrid.childCount; i++) skinGrid.GetChild(i).gameObject.SetActive(false);   // P1's skins, copied
-        ModLog.Info($"P2 skins: skin row bound ('{skinGrid.name}', {list.Count} copied containers hidden; icon {iconPath != null}, locked {lockedPath != null}, not-selected {notSelectedPath != null})");
     }
 
     // The skins P2's row shows: only the ones P2 may use (1.0 alpha, user: locked / not-bought skins aren't shown -
@@ -550,6 +592,8 @@ internal static class P2Select
     {
         try { UpdateArrow(); }
         catch (Exception e) { if (arrowErrors++ < 3) ModLog.Warn($"P2 arrows: {e.Message}"); }
+        if (skinGrid == null && boundPanel != null && boundPanel.activeInHierarchy)
+            try { BindSkinsLate(); } catch (Exception e) { lateTries = 1000; ModLog.Warn($"P2 skins: late binding failed: {e.Message}"); }
         var joy = PlayerJoin.P2Joystick;
         if (joy == null) return;
         UpdateHandover(joy);
