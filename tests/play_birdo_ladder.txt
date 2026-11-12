@@ -1,0 +1,13 @@
+chars Birdo Birdo tier 1 map Graveyard
+# user's own test run: both Birdo, both at the foot of the nearest real ladder (P1 one side, P2 the other), no natural spawns, then the run is the player's
+needpads
+wait 2
+nospawns on
+clear
+toladder p1
+stop p1
+toladder p2 back
+stop p2
+wait 1
+climbstate placed
+handover

@@ -9,8 +9,8 @@ public class Plugin : BasePlugin
 {
     public const string Guid = "thesplitscreenguy.megabonksplitscreen";
     public const string Name = "MegabonkSplitscreen";
-    public const string Version = "1.0.4-alpha";
-    public const string ReleaseName = "SplitBonk V1.0.4 Alpha";   // the menu label, the README title, the release zip's name
+    public const string Version = "1.0.5-alpha";
+    public const string ReleaseName = "SplitBonk V1.0.5 Alpha";   // the menu label, the README title, the release zip's name
 
     private static Harmony hooks;
     private static BepInEx.Configuration.ConfigFile config;
@@ -75,7 +75,8 @@ public class Plugin : BasePlugin
         P2Weapons.ApplyAimHooks(hooks);
         P2Weapons.ApplyTargetingHooks(hooks);   // after the melee/return hooks (one hook per native function)
         Knockback.Apply(hooks);
-        P2Items.Apply(hooks);                   // last: its projectile hit scopes only take methods nobody else needs
+        P2World.Apply(hooks);                   // cacti, ladders, ranged enemy aim (after P2BossAttacks: shared hit hooks stay theirs)
+        P2Movement.ApplyFloatHook(hooks);       // Birdo / Roberto float for P2        P2Items.Apply(hooks);                   // last: its projectile hit scopes only take methods nobody else needs
         // v0.25.3 dump: P2's starting AddWeapon -> UpdateStat -> CombatAura.OnStatUpdate (through these hooks) never
         // returned = the freeze when P2 took control. Not applied any more (kept for reference).
         // P2Weapons.ApplyConstantHooks(hooks);

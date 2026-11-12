@@ -1,0 +1,35 @@
+chars Monke Monke tier 1 map Desert
+# Ranged enemies chasing P2 (players 300 m apart, no natural spawns, shooters only around P2): fix off, then on.
+# P1's HP may only drop with the fix off; with it on, P2 takes the shots. Bandits (sniper shots), cactus shooters.
+wait 2
+godp1
+godp2
+nopowerups
+nospawns on
+clear
+home 300
+wait 1
+hp start
+fix ranged off
+spawn p2 Bandit 4 16
+wait 20
+hp bandit-off
+clear
+wait 1
+fix ranged on
+spawn p2 Bandit 4 16
+wait 20
+hp bandit-on
+clear
+wait 1
+fix ranged off
+spawn p2 CactusShooter 4 14
+wait 15
+hp cactus-off
+clear
+wait 1
+fix ranged on
+spawn p2 CactusShooter 4 14
+wait 15
+hp cactus-on
+quit

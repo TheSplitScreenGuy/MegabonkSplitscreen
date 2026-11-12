@@ -1,0 +1,51 @@
+chars Monke Monke tier 1 map Desert
+# v1.0.5 players' reports, Desert part.
+# 1) Cactus: P2 pushed into the nearest cactus - fix off (P1 takes the hit?), then fix on (P2 does).
+# 2) Ranged enemies: players 300 m apart, shooters spawned around P2 only - fix off (aimed at P1?), then on.
+wait 2
+godp1
+godp2
+nopowerups
+home 300
+wait 1
+hp start
+fix cactus off
+tocactus p2
+wait 1.5
+hp cactus-fix-off
+wait 2
+fix cactus on
+tocactus p2
+wait 1.5
+hp cactus-fix-on
+wait 1
+home 300
+wait 1
+fix ranged off
+spawn p2 CactusShooter 3 14
+spawn p2 Bandit 2 14
+spawn p2 SkeletonMage 2 14
+wait 12
+clear
+wait 1
+fix ranged on
+spawn p2 CactusShooter 3 14
+spawn p2 Bandit 2 14
+spawn p2 SkeletonMage 2 14
+wait 12
+hp end
+clear
+home 300
+wait 1
+srccount reset
+enemysplit start
+wait 20
+enemysplit 20s
+srccount 20s
+wait 20
+enemysplit 40s
+srccount 40s
+wait 20
+enemysplit 60s
+srccount 60s
+quit

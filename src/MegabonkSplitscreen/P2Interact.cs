@@ -358,7 +358,16 @@ internal static class P2Interact
         if (queueLogs++ < 30) ModLog.Info($"[chest] {e} window queued for {(p2 ? "P2" : "P1")} ({chestOwners.Count} waiting; game queue {GameQueue()})");
     }
     private static int queueLogs;
-    public static void Reset() { chestOwners.Clear(); p2Chests.Clear(); chestPendingUntil = -1f; Array.Clear(Queued); Array.Clear(Opened); ChestPresses = ChestInteracts = 0; }
+    public static void Reset()
+    {
+        chestOwners.Clear(); p2Chests.Clear(); chestPendingUntil = -1f; Array.Clear(Queued); Array.Clear(Opened); ChestPresses = ChestInteracts = 0;
+        // A P2 chest window still open when the run ended (its close hook never ran): its state goes too (v1.0.5)
+        if (ChestIsP2s) ModLog.Warn("P2's chest window was still open at the run's end - its state cleared");
+        ChestIsP2s = false;
+        chestWaitRelease = false;
+        if (chestHandover) P2LevelUp.RestoreControls();
+        chestHandover = false;
+    }
 
     // How many reward windows the game still has waiting that match (the one opening is no longer in its queue)
     public static int WaitingInGame(Func<Assets.Scripts.UI.InGame.Rewards.EEncounter, bool> match)

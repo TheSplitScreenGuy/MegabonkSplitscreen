@@ -1,0 +1,29 @@
+chars Birdo Roberto tier 1 map Forest
+# P2 fall damage after slowing down (user: P2 Roberto flew up, fell, slowed down before the ground - still hurt).
+# a) fly 3 s, let go 2.5 s (fast fall), hold again to the ground (12.6 m/s) - no damage expected
+# b) fly 3 s, let go to the ground - fall damage expected
+wait 2
+godp1
+godp2
+nopowerups
+nospawns on
+clear
+wait 1
+hp a-start
+jump p2
+wait 0.1
+hold p2 3
+wait 5.5
+floatcheck a-falling
+hold p2 20
+wait 18
+floatcheck a-landed
+hp a-end
+wait 2
+jump p2
+wait 0.1
+hold p2 3
+wait 15
+floatcheck b-landed
+hp b-end
+quit

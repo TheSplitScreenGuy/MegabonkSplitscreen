@@ -236,6 +236,7 @@ internal static class PlayerJoin
         RewardLayout.Reset();
         P2Gold.ResetForNewRun();
         P2Items.Reset();
+        P2World.Reset();
         P2ItemsHud.Reset();
         P2ChestPrice.Reset();
         P2ItemFx.Reset();

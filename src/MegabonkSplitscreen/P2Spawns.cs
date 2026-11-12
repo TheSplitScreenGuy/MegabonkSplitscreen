@@ -37,12 +37,58 @@ internal static class P2Spawns
                 ModLog.Warn($"P2Spawns: {name} shares native code with a hooked method, not hooked");
                 continue;
             }
-            harmony.Patch(m, postfix: new HarmonyMethod(typeof(P2Spawns), nameof(AfterSpawnPosition)));
+            harmony.Patch(m, prefix: new HarmonyMethod(typeof(P2Spawns), nameof(BeforeSpawnPosition)), postfix: new HarmonyMethod(typeof(P2Spawns), nameof(AfterSpawnPosition)));
             n++;
         }
         ModLog.Info($"P2Spawns: {n} spawn position methods hooked");
         ApplyMoreSpawns(harmony, config);
+        // v1.0.5 (players: P1 gets 2-3 enemies, P2 a horde): one side per spawned enemy (the game may ask for several
+        // positions per enemy), and where enemies really appear / go, counted per player
+        foreach (var m in typeof(Assets.Scripts.Managers.EnemyManager).GetMethods().Where(x => x.Name == "SpawnEnemy" && x.DeclaringType == typeof(Assets.Scripts.Managers.EnemyManager)))
+        {
+            if (!P2Weapons.IsNativeCodeUnique(m) || P2Weapons.IsNativeCodeHooked(m)) { ModLog.Warn($"P2Spawns: SpawnEnemy({m.GetParameters().Length}) not hookable"); continue; }
+            harmony.Patch(m, prefix: new HarmonyMethod(typeof(P2Spawns), nameof(BeforeSpawnEnemy)), postfix: new HarmonyMethod(typeof(P2Spawns), nameof(AfterSpawnEnemy)));
+        }
+        var rem = AccessTools.DeclaredMethod(typeof(Assets.Scripts.Managers.EnemyManager), "RemoveEnemy");
+        if (rem != null && P2Weapons.IsNativeCodeUnique(rem) && !P2Weapons.IsNativeCodeHooked(rem))
+            harmony.Patch(rem, prefix: new HarmonyMethod(typeof(P2Spawns), nameof(BeforeRemoveEnemy)));
     }
+
+    public static bool PerEnemyFix = true;
+    private static int spawnDepth;
+    private static bool enemySideP2;
+    public static readonly int[] Appeared = new int[2], Removed = new int[2], RemovedDead = new int[2];
+    public static bool TestNoSummonerSpawns;   // autotest 'nospawns on': the game's own summoners spawn nothing
+    private static bool BeforeSpawnEnemy(System.Reflection.MethodBase __originalMethod)
+    {
+        if (TestNoSummonerSpawns && __originalMethod.GetParameters().Length == 5) return false;
+        if (spawnDepth++ == 0) enemySideP2 = coin.NextDouble() < 0.5;
+        return true;
+    }
+    private static void AfterSpawnEnemy(Assets.Scripts.Actors.Enemies.Enemy __result, System.Reflection.MethodBase __originalMethod)
+    {
+        if (TestNoSummonerSpawns && __originalMethod.GetParameters().Length == 5) return;
+        if (spawnDepth > 0) spawnDepth--;
+        if (__result == null || !P2Movement.Active || P2Health.IsDead) return;
+        var p1 = Assets.Scripts.Actors.Player.MyPlayer.Instance;
+        if (p1 == null) return;
+        Vector3 at = __result.transform.position;
+        Appeared[(at - P2Movement.BodyPosition()).sqrMagnitude < (at - p1.transform.position).sqrMagnitude ? 1 : 0]++;
+    }
+    private static void BeforeRemoveEnemy(Assets.Scripts.Actors.Enemies.Enemy enemy)
+    {
+        if (enemy == null || !P2Movement.Active) return;
+        var p1 = Assets.Scripts.Actors.Player.MyPlayer.Instance;
+        if (p1 == null) return;
+        Vector3 at = enemy.transform.position;
+        int side = (at - P2Movement.BodyPosition()).sqrMagnitude < (at - p1.transform.position).sqrMagnitude ? 1 : 0;
+        Removed[side]++;
+        bool dead = false;
+        try { dead = enemy.IsDead(); } catch { }
+        if (dead) RemovedDead[side]++;
+    }
+    public static string Counts() => $"appeared near P1 {Appeared[0]} / P2 {Appeared[1]}; removed near P1 {Removed[0]} (dead {RemovedDead[0]}) / P2 {Removed[1]} (dead {RemovedDead[1]})";
+    public static void ResetCounts() { Array.Clear(Appeared); Array.Clear(Removed); Array.Clear(RemovedDead); }
 
     // ---------- More enemies while apart (user: far apart, the spawns shouldn't look thinned out) ----------
     // The game's summoners earn credits (GetCreditsPerSecond) and spend them on enemies up to a target count
@@ -161,8 +207,17 @@ internal static class P2Spawns
         talliedP1 = talliedP2 = 0;
     }
 
+    // v1.0.5 (players: "the enemy scaling is 3:1, P1 gets 2-3 enemies, P2 a horde"; test: 32 appeared near P1, 96 near
+    // P2): GetEnemySpawnPositionBiased calls GetEnemySpawnPosition inside it, and both were hooked - the inner call's
+    // coin gave P2 half the time and the outer one's the other half of the rest: 3 of 4 enemies around P2. Only the
+    // outermost call decides now.
+    private static int posDepth;
+    private static void BeforeSpawnPosition() { if (posDepth > 8) posDepth = 0; posDepth++; }   // (a game exception skips the postfix: never stuck)
+
     private static void AfterSpawnPosition(ref Vector3 __result)
     {
+        if (posDepth > 0) posDepth--;
+        if (PerEnemyFix && posDepth > 0) return;   // an inner call: the outer one decides
         if (inside || !P2Movement.Active || P2Health.IsDead) return;
         var p1 = Assets.Scripts.Actors.Player.MyPlayer.Instance;
         if (p1 == null || __result == SpawnPositions.INVALID_POS) return;
@@ -175,7 +230,7 @@ internal static class P2Spawns
         // User (v0.27.5): enemies spawned only around P2 when far apart, and should always spawn on both players.
         // The old "every other call" could pair up with the game asking more than once per enemy, so it's a coin flip
         // per call now (own random, the game's isn't touched), at any distance.
-        toP2 = coin.NextDouble() < 0.5;
+        toP2 = PerEnemyFix && spawnDepth > 0 ? enemySideP2 : coin.NextDouble() < 0.5;
         Tally(toP2, sep);
         if (!toP2) return;
         inside = true;

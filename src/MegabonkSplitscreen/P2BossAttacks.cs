@@ -22,6 +22,8 @@ internal static class P2BossAttacks
         int n = 0;
         foreach (var t in new[] { typeof(EnemySpecialAttackPrefabSingle), typeof(EnemySpecialAttackFollowing), typeof(EnemySpecialAttackPrefabMulti),
                                   typeof(EnemySpecialAttackManyRandom), typeof(EnemyGroundSlam),
+                                  // v1.0.5 (players: every ranged enemy's attack went for P1): cactus spit, sniper shots
+                                  typeof(EnemySpecialAttackCactusProjectile), typeof(EnemySpecialAttackHitscanMultiple),
                                   typeof(Assets.Scripts.Game.Combat.EnemySpecialAttacks.EnemyProjectileMud) })
             n += Hook(harmony, AccessTools.DeclaredMethod(t, "SpawnHitEffect"), nameof(BeforeHit), nameof(AfterHit));
         foreach (var m in typeof(Assets.Scripts.Game.Combat.DamageUtility).GetMethods().Where(x => x.Name == "GetPlayerDamage" && x.DeclaringType == typeof(Assets.Scripts.Game.Combat.DamageUtility) && x.GetParameters().Length == 6))
@@ -48,7 +50,7 @@ internal static class P2BossAttacks
         ModLog.Info($"P2BossAttacks: {n} hooks");
     }
 
-    private static bool IsP2Collider(Collider col)
+    internal static bool IsP2Collider(Collider col)
     {
         var body = P2Body.Body;
         return col != null && ((P2Movement.Pm?.playerCollider != null && col.Pointer == P2Movement.Pm.playerCollider.Pointer)
@@ -228,12 +230,27 @@ internal static class P2BossAttacks
         Vector3 pos = args != null && args.Length > 0 && args[0] is Vector3 v ? v : atk.transform.position;
         var sa = atk.specialAttack;
         float radius = sa != null ? sa.attackRadius : 0f;
-        if (radius <= 0f) return;
-        // P2's capsule (centre at its body) reaching into the sphere
+        // A slice / shot along a line (EnemySpecialAttackHitscanMultiple: Bandit's slice, snipers; SpawnHitEffect(pos, dir)):
+        // P2's distance to the line from pos along dir, up to the attack's range (v1.0.5 test: slices started 2.5 m from P2)
+        var hs = atk.TryCast<EnemySpecialAttackHitscanMultiple>();
         Vector3 p2 = P2Movement.BodyPosition() + Vector3.up;
-        float d = Vector3.Distance(p2, pos);
+        float d;
+        if (hs != null && args != null && args.Length > 1 && args[1] is Vector3 dir0 && dir0.sqrMagnitude > 0.0001f)
+        {
+            if (radius <= 0f) radius = 0.6f;
+            float range = hs.maxRange > 0f ? hs.maxRange : 10f;
+            Vector3 n = dir0.normalized;
+            float t = Mathf.Clamp(Vector3.Dot(p2 - pos, n), 0f, range);
+            d = Vector3.Distance(p2, pos + n * t);
+        }
+        else
+        {
+            if (radius <= 0f) return;
+            // P2's capsule (centre at its body) reaching into the sphere
+            d = Vector3.Distance(p2, pos);
+        }
         bool p1Hit = hitDamage >= 0f;
-        if (d > radius + 1.5f)
+        if (d > radius + (hs != null ? 0.6f : 1.5f))   // (a line: P2's body width; a sphere: the capsule's height too)
         {
             Log($"{atk.eAttack} hit at {pos} (radius {radius:F1}): P2 {d:F1} m - outside; P1 hit {p1Hit}");
             return;

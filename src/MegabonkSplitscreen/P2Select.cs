@@ -414,7 +414,7 @@ internal static class P2Select
     private static CharacterMenu boundMenu;
     private static float boundAt;
     private static bool handoverPending, handedOver;
-    public static string State => $"P2 pick {SafeName(Picked)}, skin {SkinName(PickedSkin)} (cursor slot {cursor}, skin cursor {skinCursor} of {skinCopies.Count}, picked this visit {pickedThisVisit}), confirm pending {handoverPending}, map select controls P2's {handedOver}";
+    public static string State => $"P2 pick {SafeName(Picked)}, skin {SkinName(PickedSkin)} (cursor on '{CursorRect?.name}'{(onConfirm ? " = CONFIRM" : "")}, slots {slots.Count} (active {slots.Count(s => s.rt != null && s.rt.gameObject.activeInHierarchy)}), cursor slot {cursor}, skin cursor {skinCursor} of {skinCopies.Count}, picked this visit {pickedThisVisit}), confirm pending {handoverPending}, map select controls P2's {handedOver}";
     private static float pendingSince;
     private const float HandoverWait = 5f;   // the game takes a moment to leave character select after Confirm
     private static bool startWasDown;
@@ -588,15 +588,30 @@ internal static class P2Select
     private static IntPtr lastArrowTarget;
     private static int arrowLogs;
 
+    // v1.0.5 (players: after the first run P2's character select cursor kept going back to Confirm, P2 couldn't pick):
+    // a run that ended while a P2 window (chest, reward, level-up, pause) had the game's controls never got its close
+    // hook - P2's pad stayed on the game's player through the menus, driving the game's own selection (on P1's Confirm).
+    // Outside a run nothing but P2's map-select handover may keep them.
+    public static bool ControlsFix = true;
+    private static void ReleaseStaleControls()
+    {
+        if (!ControlsFix || handoverPending || handedOver || !P2LevelUp.ControlsWithP2) return;
+        var p1 = Assets.Scripts.Actors.Player.MyPlayer.Instance;
+        if (p1 != null) return;   // (Unity's check: the last run's destroyed player counts as none)
+        ModLog.Warn("P2 select: the game's controls were still P2's outside a run (a P2 window was open when the run ended) - back to P1");
+        P2LevelUp.RestoreControls();
+    }
+
     public static void Update()
     {
+        try { ReleaseStaleControls(); } catch (Exception e) { if (arrowErrors++ < 3) ModLog.Warn($"P2 select controls: {e.Message}"); }
         try { UpdateArrow(); }
         catch (Exception e) { if (arrowErrors++ < 3) ModLog.Warn($"P2 arrows: {e.Message}"); }
         if (skinGrid == null && boundPanel != null && boundPanel.activeInHierarchy)
             try { BindSkinsLate(); } catch (Exception e) { lateTries = 1000; ModLog.Warn($"P2 skins: late binding failed: {e.Message}"); }
         var joy = PlayerJoin.P2Joystick;
-        if (joy == null) return;
-        UpdateHandover(joy);
+        if (joy == null && !Autotest.Active) return;   // (a test's P2 without a pad: the script's presses drive the cursor)
+        if (joy != null) UpdateHandover(joy);
         if (Lobby.Active) return;   // the lobby first (P2's Start there is the join, B is leave)
         if (boundPanel == null || !boundPanel.activeInHierarchy || slots.Count == 0) return;
         if (!PlayerJoin.InCharacterSelect || handoverPending || handedOver) return;
@@ -615,7 +630,7 @@ internal static class P2Select
         }
 
         // Start: confirm (not the press P2 joined with)
-        bool startDown = P2Control.PadHeld(joy, "start", "menu", "options");
+        bool startDown = joy != null && P2Control.PadHeld(joy, "start", "menu", "options");
         bool startPressed = startDown && !startWasDown;
         startWasDown = startDown;
         if (startPressed && Time.unscaledTime - boundAt > StartGuard)
@@ -642,7 +657,7 @@ internal static class P2Select
         prevButton = button;
 
         Vector2Int dir = button != null ? DirFromName(button) : Vector2Int.zero;
-        if (dir == Vector2Int.zero && !Autotest.Active)   // (the test moves P2's cursor with d-pad presses)
+        if (dir == Vector2Int.zero && !Autotest.Active && joy != null)   // (the test moves P2's cursor with d-pad presses)
         {
             var ap = polling.PollControllerForFirstAxis(ControllerType.Joystick, joy.id);
             if (ap.success)

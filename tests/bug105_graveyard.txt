@@ -1,0 +1,41 @@
+chars Birdo Birdo tier 1 map Graveyard
+# v1.0.5, 4th: both Birdo (no wall climb).
+# 1) ladder baseline: P1 walking into a real ladder with the real jump button held (p1jumpheld) - does P1 climb?
+# 2) P2 into the same ladder holding A (the mod's RefreshLadder for P2)
+# 3) P2's float: jump, hold A - fall should stay at 2.6 m/s
+wait 2
+godp1
+godp2
+nopowerups
+nospawns on
+clear
+toladder p1 back
+p1jumpheld on
+wait 1
+climbstate p1-1s
+wait 2
+climbstate p1-3s
+p1jumpheld off
+stop p1
+wait 2
+toladder p2 back
+hold p2 4
+wait 1
+climbstate p2-1s
+wait 2
+climbstate p2-3s
+stop p2
+wait 3
+jump p2
+wait 0.1
+hold p2 4
+wait 0.6
+floatcheck p2-0.7
+wait 0.3
+floatcheck p2-1.0
+wait 0.3
+floatcheck p2-1.3
+wait 0.4
+floatcheck p2-1.7
+wait 4
+quit

@@ -1,0 +1,70 @@
+chars Monke Birdo tier 1 map Forest
+# v1.0.5 players' reports, Forest part (3rd run).
+# 1) Birdo float, P2 Birdo / P1 Monke, 8 m apart on open ground, fix off then on:
+#    a) P2 jumps + holds jump alone: does P2 fall slowly (float)?
+#    b) both jump, only P2 holds: does P1 get lifted / fall slowly (P2's float on P1)?
+# 2) Spawns 300 m apart for 45 s with the outermost-call rule: where enemies appear.
+wait 2
+godp1
+godp2
+nopowerups
+clear
+place 8
+wait 2
+floatcheck ground
+fix float off
+jump p2
+wait 0.2
+hold p2 4
+wait 0.5
+floatcheck off-p2-a
+wait 0.5
+floatcheck off-p2-b
+wait 0.5
+floatcheck off-p2-c
+wait 3
+jump p1
+jump p2
+wait 0.2
+hold p2 4
+wait 0.5
+floatcheck off-both-a
+wait 0.5
+floatcheck off-both-b
+wait 0.5
+floatcheck off-both-c
+wait 3
+fix float on
+jump p2
+wait 0.2
+hold p2 4
+wait 0.5
+floatcheck on-p2-a
+wait 0.5
+floatcheck on-p2-b
+wait 0.5
+floatcheck on-p2-c
+wait 3
+jump p1
+jump p2
+wait 0.2
+hold p2 4
+wait 0.5
+floatcheck on-both-a
+wait 0.5
+floatcheck on-both-b
+wait 0.5
+floatcheck on-both-c
+wait 3
+clear
+fix spawnside on
+home 300
+wait 1
+enemysplit reset
+wait 15
+enemysplit on-15s
+wait 15
+enemysplit on-30s
+wait 15
+enemysplit on-45s
+quit

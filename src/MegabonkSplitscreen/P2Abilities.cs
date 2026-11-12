@@ -32,6 +32,11 @@ namespace MegabonkSplitscreen;
 internal static class P2Abilities
 {
     public static PassiveAbility Passive { get; private set; }
+    public static bool FloatFix = true;   // Birdo / Roberto float for P2 (v1.0.5; P2Movement.FixedTick, FixedTick below)
+    public static bool HasFloat
+    {
+        get { try { return Passive != null && Passive.GetPassiveType() == EPassive.Float; } catch { return false; } }
+    }
     public static ActiveAbility Active { get; private set; }
     private static bool tried;
     private static List<PropertyInfo> allEvents;
@@ -368,7 +373,14 @@ internal static class P2Abilities
     public static void FixedTick()
     {
         if (Passive == null || Time.deltaTime <= 0f || Assets.Scripts.Utility.MyTime.paused || P2Health.IsDead) return;
-        Guard("passive tick", () => InP2(() => Passive.Tick()));
+        // v1.0.5 (players: Birdo / Roberto's float worked on P1, not on P2): the passive's tick finds the player's
+        // movement through P1's MyPlayer.playerMovement - P2's movement copy stands in there too while it ticks
+        var p1 = MyPlayer.Instance;
+        var own = p1 != null ? p1.playerMovement : null;
+        bool swap = FloatFix && HasFloat && p1 != null && P2Movement.Pm != null;   // (Float characters only: other passives as before)
+        if (swap) { p1.playerMovement = P2Movement.Pm; P2Movement.EnterInput(); }
+        try { Guard("passive tick", () => InP2(() => Passive.Tick())); }
+        finally { if (swap) { P2Movement.ExitInput(); p1.playerMovement = own; } }
     }
     private static float nextAegisScan;
 

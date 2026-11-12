@@ -1,0 +1,53 @@
+chars Monke Birdo tier 1 map Forest
+# Birdo float for P2 (P1 Monke, P2 Birdo): height gained from a jump held 3 s - fix off, then on (P1-Birdo baseline:
+# ~19 m); then P1 holds jump while P2 jumps (P2 must not float from P1's button).
+wait 2
+godp1
+godp2
+nopowerups
+nospawns on
+clear
+home 40
+wait 2
+floatcheck start
+fix float off
+jump p2
+wait 0.1
+hold p2 3
+wait 0.3
+floatcheck off-0.4
+wait 0.3
+floatcheck off-0.7
+wait 0.3
+floatcheck off-1.0
+wait 0.3
+floatcheck off-1.3
+wait 4
+floatcheck start2
+fix float on
+jump p2
+wait 0.1
+hold p2 3
+wait 0.3
+floatcheck on-0.4
+wait 0.3
+floatcheck on-0.7
+wait 0.3
+floatcheck on-1.0
+wait 0.3
+floatcheck on-1.3
+wait 0.3
+floatcheck on-1.6
+wait 5
+floatcheck start3
+jump p2
+wait 0.05
+hold p1 3
+wait 0.3
+floatcheck p1hold-0.4
+wait 0.3
+floatcheck p1hold-0.7
+wait 0.3
+floatcheck p1hold-1.0
+wait 4
+quit

@@ -1,0 +1,47 @@
+chars Monke Monke tier 1 map Forest
+# Players: "in character select after the first run, P2's cursor always goes back to Confirm, P2 can't pick a
+# character". Run 1, both die, the death screen's Menu, Play, lobby, character select: P2's d-pad moves, the cursor
+# after each (menustate: cursor on '<button>', = CONFIRM when on Confirm).
+wait 2
+godp1 off
+godp2 off
+kill p2
+wait 3
+kill p1
+wait 10
+deathmenu
+wait 8
+menustate
+waitselected B_Play 20
+p1press
+wait 2
+lobbyconfirm
+wait 2
+menustate
+shot cursor_select_open
+p2press dpad right
+wait 0.6
+menustate
+p2press dpad right
+wait 0.6
+menustate
+p2press dpad down
+wait 0.6
+menustate
+p2press dpad left
+wait 0.6
+menustate
+shot cursor_after_moves
+p2press a
+wait 0.6
+menustate
+p2press dpad up
+wait 0.6
+menustate
+p2press dpad left
+wait 0.6
+menustate
+wait 2
+menustate
+shot cursor_end
+quit

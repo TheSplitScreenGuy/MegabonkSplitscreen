@@ -1,0 +1,6 @@
+chars Roberto Roberto tier 1 map Forest
+# user's own test run: both Roberto, no natural spawns, then the run is the player's
+needpads
+wait 2
+nospawns on
+handover

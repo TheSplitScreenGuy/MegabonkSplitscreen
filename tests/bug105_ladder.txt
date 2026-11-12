@@ -1,0 +1,54 @@
+chars Fox Fox tier 1 map Forest
+# Ladders (user: P2 can't climb - hold jump while moving into one; build one in the Forest so its place is known).
+# Both Fox (no wall climb). A test ladder 1.5 m ahead (+x), the player walks into it holding jump: P1 first (baseline),
+# then P2 fix hold off / on; each ladder facing both ways.
+wait 2
+godp1
+godp2
+nopowerups
+nospawns on
+clear
+place 40
+wait 1
+makeladder p1
+hold p1 4
+wait 1
+climbstate p1-1s
+wait 2
+climbstate p1-3s
+stop p1
+wait 2
+makeladder p1 flip
+hold p1 4
+wait 1
+climbstate p1flip-1s
+wait 2
+climbstate p1flip-3s
+stop p1
+wait 2
+fix hold off
+makeladder p2
+hold p2 4
+wait 1
+climbstate p2off-1s
+wait 2
+climbstate p2off-3s
+stop p2
+wait 2
+fix hold on
+makeladder p2
+hold p2 4
+wait 1
+climbstate p2on-1s
+wait 2
+climbstate p2on-3s
+stop p2
+wait 2
+makeladder p2 flip
+hold p2 4
+wait 1
+climbstate p2onflip-1s
+wait 2
+climbstate p2onflip-3s
+stop p2
+quit

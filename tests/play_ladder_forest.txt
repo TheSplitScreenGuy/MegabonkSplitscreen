@@ -1,0 +1,11 @@
+chars Fox Birdo tier 1 map Forest
+# user's own test run: a visible test ladder 3 m from each player at spawn (P1 Fox, P2 Birdo), no natural spawns, then the run is the player's
+needpads
+wait 2
+nospawns on
+clear
+makeladder p1
+makeladder p2
+stop p1
+stop p2
+handover

@@ -24,7 +24,14 @@ internal static class P2Rewards
     public static void Apply(Harmony harmony)
     {
         int n = 0;
-        n += Hook(harmony, typeof(ChargeShrine), "Reward", nameof(BeforeChargeReward), prefix: true);
+        var reward = AccessTools.DeclaredMethod(typeof(ChargeShrine), "Reward");
+        if (reward != null && P2Weapons.IsNativeCodeUnique(reward) && !P2Weapons.IsNativeCodeHooked(reward))
+        {
+            harmony.Patch(reward, prefix: new HarmonyMethod(typeof(P2Rewards), nameof(BeforeChargeReward)),
+                          postfix: new HarmonyMethod(typeof(P2Rewards), nameof(AfterChargeReward)));
+            n++;
+        }
+        else ModLog.Warn("P2Rewards: ChargeShrine.Reward shares native code, not hooked");
         n += Hook(harmony, typeof(EncounterUi), "Open", nameof(AfterEncounterOpen), prefix: false);
         n += Hook(harmony, typeof(EncounterUi), "OnClose", nameof(AfterEncounterClose), prefix: false);
         ModLog.Info($"P2Rewards: {n} of 3 hooks");
@@ -52,18 +59,34 @@ internal static class P2Rewards
         ModLog.Info($"P2 earned the next reward ({why})");
     }
 
+    // v1.0.5 (players: both finished charging a shrine together and it went to P1, even when P2 was in first; user: let
+    // both get the reward): both players inside the shrine's zone when it pays out -> the game's reward is P1's and a
+    // second one of the same kind is queued for P2 (P2's window opens after P1's, P2 controls it)
+    public static bool BothFix = true;
+    private static int shrineLogs;
+    private static EEncounter? extraForP2;                       // queued for P2 next frame (not inside the game's AddEncounter)
+    private static readonly HashSet<int> shrinesPaid = new();   // (instance ids: never reused, unlike pointers)   // each charge shrine decides once
+
+    private static float ZoneRadius(ChargeShrine s)
+    {
+        try { if (s.zoneRenderer != null) return Mathf.Max(s.zoneRenderer.bounds.extents.x, s.zoneRenderer.bounds.extents.z); } catch { }
+        return 6f;
+    }
+    private static float Flat(Vector3 a, Vector3 b) { a.y = 0f; b.y = 0f; return Vector3.Distance(a, b); }
+
+    // (logs only now - the owner is decided when the reward is queued, ChargeShrineOwner; this hook didn't always run)
     private static void BeforeChargeReward(ChargeShrine __instance)
     {
         try
         {
             var p1 = MyPlayer.Instance;
-            if (__instance == null || p1 == null || !P2Movement.Active || P2Health.IsDead) return;
+            if (__instance == null || p1 == null || !P2Movement.Active || shrineLogs++ >= 20) return;
             Vector3 s = __instance.transform.position;
-            float d1 = Vector3.Distance(p1.transform.position, s), d2 = Vector3.Distance(P2Movement.BodyPosition(), s);
-            if (d2 < d1) MarkP2($"charge shrine, P2 {d2:F1} / P1 {d1:F1} away");
+            ModLog.Info($"[shrine] ChargeShrine.Reward: P1 {Flat(p1.transform.position, s):F1} m, P2 {Flat(P2Movement.BodyPosition(), s):F1} m from it, zone radius {ZoneRadius(__instance):F1}");
         }
         catch (Exception e) { ModLog.Warn($"P2Rewards charge shrine: {e.Message}"); }
     }
+    private static void AfterChargeReward() { }
 
     // From P2LevelUp's AddEncounter prefix, for every non-level-up reward
     public static void OnAddEncounter(EEncounter type)
@@ -71,28 +94,60 @@ internal static class P2Rewards
         bool p2 = markedUntil > 0f && Time.unscaledTime <= markedUntil;
         if (p2) markedUntil = -1f;
         // Charge shrines (user: still went to P1 when P2 charged one; the Reward() hook never marked it): the shrine
-        // that just completed, nearest to either player, belongs to whoever is nearer to it
-        if (!p2 && type == EEncounter.RandomStats) p2 = ChargeShrineIsP2s();
+        // that just completed, nearest to either player, belongs to whoever is nearer to it - or to both (BothFix)
+        if (!p2 && type == EEncounter.RandomStats)
+        {
+            int who = ChargeShrineOwner();
+            if (who == 3)
+            {
+                owners.Add((type, false));
+                extraForP2 = type;   // P2's own, queued next frame
+                return;
+            }
+            p2 = who == 2;
+        }
         owners.Add((type, p2));
         if (p2) ModLog.Info($"Reward {type} queued for P2");
     }
 
-    private static bool ChargeShrineIsP2s()
+    // 1 = P1's, 2 = P2's, 3 = both were in the zone (BothFix)
+    private static int ChargeShrineOwner()
     {
         var p1 = MyPlayer.Instance;
-        if (p1 == null || !P2Movement.Active) return false;
+        if (p1 == null || !P2Movement.Active) return 1;
         Vector3 a = p1.transform.position, b = P2Movement.BodyPosition();
         ChargeShrine best = null;
         float bestD = float.MaxValue, d1 = 0f, d2 = 0f;
         foreach (var s in UnityEngine.Object.FindObjectsOfType<ChargeShrine>())
         {
-            if (s == null || !s.completed) continue;
-            float x = Vector3.Distance(a, s.transform.position), y = Vector3.Distance(b, s.transform.position);
+            if (s == null || !s.completed || shrinesPaid.Contains(s.GetInstanceID())) continue;
+            float x = Flat(a, s.transform.position), y = Flat(b, s.transform.position);
             if (Mathf.Min(x, y) < bestD) { bestD = Mathf.Min(x, y); best = s; d1 = x; d2 = y; }
         }
-        if (best == null) { ModLog.Info("[reward] RandomStats queued, no completed charge shrine found -> P1"); return false; }
-        ModLog.Info($"[reward] RandomStats from a charge shrine: P1 {d1:F1} / P2 {d2:F1} away -> {(d2 < d1 ? "P2" : "P1")}");
-        return d2 < d1;
+        if (best == null) { ModLog.Info("[reward] RandomStats queued, no completed charge shrine found -> P1"); return 1; }
+        shrinesPaid.Add(best.GetInstanceID());
+        float r = ZoneRadius(best);
+        bool both = d1 <= r + 0.5f && d2 <= r + 0.5f && !Downed.P1Down && !P2Health.IsDead;
+        int who = both && BothFix ? 3 : d2 < d1 ? 2 : 1;
+        ModLog.Info($"[reward] RandomStats from a charge shrine: P1 {d1:F1} / P2 {d2:F1} away, zone radius {r:F1}{(both ? ", both inside" : "")} -> {(who == 3 ? "BOTH" : who == 2 ? "P2" : "P1")}{(both && !BothFix ? " (fix off)" : "")}");
+        return who;
+    }
+
+    // Every frame in a run: P2's own reward of a shrine both players charged
+    private static void QueueExtraForP2()
+    {
+        if (extraForP2 == null) return;
+        var type = extraForP2.Value;
+        extraForP2 = null;
+        try
+        {
+            var ew = UnityEngine.Object.FindObjectOfType<Assets.Scripts.UI.InGame.Levelup.EncounterWindows>();
+            if (ew == null) { ModLog.Warn("[shrine] no EncounterWindows for P2's reward"); return; }
+            MarkP2("charge shrine, both players in the zone");
+            ew.AddEncounter(type);
+            ModLog.Info($"[shrine] P2's own {type} reward queued (both were in the zone)");
+        }
+        catch (Exception e) { ModLog.Warn($"[shrine] P2's reward failed: {e.Message}"); }
     }
 
     // The window for `type` is opening: whose is it? (the oldest queued reward of that type)
@@ -143,6 +198,7 @@ internal static class P2Rewards
     // Called every frame in a run (also while paused): controls to P2 once P2 has let go of the buttons
     public static void Update()
     {
+        QueueExtraForP2();
         if (!encounterIsP2 || !waitRelease) return;
         var joy = PlayerJoin.P2Joystick;
         if (joy != null && P2Control.PadHeld(joy, "a", "cross", "x", "square", "start", "menu", "options")) return;
@@ -155,6 +211,8 @@ internal static class P2Rewards
     {
         owners.Clear();
         markedUntil = -1f;
+        extraForP2 = null;
+        shrinesPaid.Clear();
         if (encounterIsP2) AfterEncounterClose();
     }
 }

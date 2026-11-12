@@ -42,6 +42,9 @@ internal static class P2Health
         ModLog.Info("P2Health: enemy targeting hook applied");
     }
 
+    // This enemy is chasing P2 (its target is P2's body)
+    public static bool TargetsP2(Enemy e) => e != null && rb != null && !IsDead && e.target != null && e.target.Pointer == rb.Pointer;
+
     // New run (character select closed): full health next time P2 spawns
     public static void ResetForNewRun() => runStarted = false;
 

@@ -2,6 +2,66 @@
 
 Goal: 2-player local splitscreen for Megabonk (single-player Unity game).
 
+## Players' reports after 1.0.4 (2026-11-12) - tests\bug105_*.txt; test switches 'fix cactus|ladder|ranged|shrineboth|float|spawnside|controls on|off', 'nospawns on|off'
+- Spawns "3:1, P1 gets 2-3, P2 a horde": REPRODUCED (enemies appeared near P1 32 / P2 96; at 45 s P1 1 vs P2 12
+  around). Cause: GetEnemySpawnPositionBiased calls GetEnemySpawnPosition inside it and both were hooked - two coin
+  flips, 3 of 4 enemies around P2. FIXED (P2Spawns: only the outermost call decides; one side per SpawnEnemy): 54/72,
+  5 vs 5 around each player at 30 s.
+- Charge shrine finished by both -> P1 (even with P2 in first): REPRODUCED (both 2.1 m from it, only one reward).
+  User's wish: both get it. DONE (P2Rewards.ChargeShrineOwner: both inside the zone radius -> the game's reward is
+  P1's, a second of the same kind is queued for P2 next frame; windows one after the other, each player controls
+  theirs). Not done: both windows at the same time (the game shows one reward window at a time; the stats panel
+  idea belongs to that - a bigger UI change, asked the user).
+- Desert cactus hurt P1 when P2 touched it: REPRODUCED (P1 1000000 -> 999999, P2 untouched). DamagePlayerCollider.
+  OnCollisionEnter hurts "the player". FIXED (P2World: P2's touch runs the cactus' hit as P2's, own refresh time).
+- Ranged enemies aimed at P1: REPRODUCED (cactus spit landed 1.8 m from P1 while 285 m from P2; Bandit slices that
+  hit P2's collider took P1's HP: P1 -926 at 300 m from every enemy). FIXED: every EnemySpecialAttackPrefab kind's
+  Init and attack coroutine steps run with P2 as the player for an enemy chasing P2 (spit lands on P2: 0.0 m);
+  cactus spit / Bandit slices / sniper shots go through P2BossAttacks' SpawnHitEffect hit (P2's collider off for the
+  game's hit, P2 hit by distance - to the slice line for hitscan kinds). After: P1 never hit in 4 phases.
+  SkeletonMage: no special attack seen.
+- Birdo / Roberto float not working for P2 - FIXED, user confirmed on real pads. What the float is (measured on P1
+  with the real jump button held - autotest 'p1jumpheld'): once falling (PlayerMovement.CanFloat), the fall stays at
+  2.6 m/s while jump is held; no lift. The game does it in P1's PlayerInput physics step (the only per-physics-step
+  MyInputManager.GetButton(Jump) - [p2input] count), a script P2's copy doesn't have. P2Movement.Float() does the
+  same for P2 (Float passive, A held, CanFloat in P2's context). Pitfall: the test's own P1 input sends "jumping"
+  every tick while a jump is held -> fake lifts (20 m); an early "fix" copied that lift for P2 - removed.
+- Roberto's levitation (same report): his passive is Hoarder, so not the Float rule. Measured on P1 with the real jump
+  button held (tests\bug105_roberto.txt): rising 18.5 m/s right after the jump, +2.4 m/s per second held, no limit in
+  6 s (156 m up), no gold used, normal fall once let go. Where: P1's PlayerInventory.PhysicsTick (MyPlayer.FixedUpdate
+  -> it asks IsHoldingJump / CanFloat every physics step - [p2input] probe); P2 has no PlayerInventory, so neither
+  Birdo's nor Roberto's ran for P2. FIXED: P2Movement.RobertoLift (P2's character is Roberto, A held, in the air):
+  P2 18 -> 24.7 m/s in 3 s, 65 m (P1 68 m); start nudged to 19.5 to close the 1 m/s gap.
+  User (real pads): P1-Roberto has a limit and can't rise again after letting go; P2 had neither. Measured on P1
+  (14 s hold): lift ~11.2 s (~360 m), then a 12.6 m/s fall while held (normal fall if not), holding again in the air =
+  only the slow fall, full lift again after landing. P2 now the same (test: 21/43/156 m at 1/2/6 s like P1; top 341 m
+  vs P1 ~368 - P2's lift ends ~1 s early, vy 0.0 at 11 s, cause not found; held fall 13.2 vs 12.6; rest identical).
+- User: P2 took fall damage after flying up, falling, and slowing down before the ground. P2's fall damage
+  (P2Movement.LandingDamage, the mod's own) used the fastest fall speed of the whole airtime. FIXED: the speed of the
+  last tick in the air (tests\bug105_falldamage.txt: fell at 50.6, slowed, landed 18.9 -> no damage; a straight fall
+  at 130.8 -> the game's fall-damage rule).
+- Graveyard ladders, P2 can't climb - FIXED, user confirmed. Ladder.OnTriggerStay run with P2 as the player never set
+  P2's ladder state; P2World calls the game's PlayerMovement.RefreshLadder(ladder) on P2's copy (onLadder True), and
+  P2's movement code gets P2's held jump (P1's PlayerInput.holdingJump / IsHoldingJump / MyInputManager.GetButton(Jump)
+  answer with P2's A while P2's movement code runs - P2Movement.EnterP2Input). Autotests can't climb (the test's input
+  doesn't hold like a pad; 'makeladder' test ladders aren't real ladders).
+- Catacombs jump pad launched P1, not P2 - FIXED, user confirmed: P2 touching a JumpPad -> the game's
+  PlayerMovement.JumpPad(pad) on P2's copy (P2 launched 65 m/s up; the pad's own trigger code did nothing for P2).
+- P2 took no lava damage - FIXED (test: fix off no damage, on P2 999936 -> 942434, P1 untouched): Lava / damaging
+  Water steps run once more with P2 as the player on P2's borrowed health, per-player timers/flags kept apart.
+- P1 used the catacombs leave door and landed in a void (user's own run, both Birdo, natural spawns off): NOT
+  reproduced - tests\bug_graveyard_b.txt twice: P1 on the surface at y 1.85, P2 2 m away, normal screenshot. [door]
+  (and [world], [shrine], [float]) lines are now kept in players' logs too (ModLog.KeptTags).
+- Character select after the first run, P2's cursor back on Confirm: NOT reproduced (test P2 without a pad moved
+  freely after the death screen's Menu; P2Select now runs on the test's presses without a pad). Likely real-pad cause
+  found: a run ending while a P2 window (chest, reward, level-up) had the game's controls never ran its close hook -
+  P2's pad stayed on the game's player through the menus (driving the game's own selection, P1's Confirm). FIXED as a
+  safety net: outside a run the controls go back to P1 (P2Select.ReleaseStaleControls), P2Interact.Reset clears a
+  P2 chest window's state.
+- Gold minus / "irrational": NOT reproduced. Safety net: P2Gold checks every swapped amount (negative / NaN /
+  infinite -> logged with a stack trace, set to 0).
+- Regression: tests\items_deadlisteners.txt passes (items in all 3 runs, only the game's own 2 leftovers).
+
 ## Players' reports after 1.0.3 (2026-11-09) - TEMP commands in AutotestRestart.cs (eventcheck, srccount, invcheck)
 - "After restarting once, Cheese / Cursed Doll / Soul Harvester / Slutty Cannon stop working with two players":
   death-screen restart (tests\items_restart.txt) and the pause menu's RestartRun (items_restart_midrun.txt): NOT

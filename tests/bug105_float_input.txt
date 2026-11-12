@@ -1,0 +1,56 @@
+chars Birdo Monke tier 1 map Forest
+# Birdo slow fall, measured on P1: a jump with the real jump button (as the game reads it) NOT held, then one with it
+# held the whole time. Fall speed every 0.15 s - the difference is what the float does.
+wait 2
+godp1
+godp2
+nopowerups
+nospawns on
+clear
+place 40
+wait 1
+jump p1
+wait 0.15
+floatcheck nohold-0.15
+wait 0.15
+floatcheck nohold-0.30
+wait 0.15
+floatcheck nohold-0.45
+wait 0.15
+floatcheck nohold-0.60
+wait 0.15
+floatcheck nohold-0.75
+wait 0.15
+floatcheck nohold-0.90
+wait 0.15
+floatcheck nohold-1.05
+wait 0.3
+floatcheck nohold-1.35
+wait 3
+p1jumpheld on
+jump p1
+wait 0.15
+floatcheck hold-0.15
+wait 0.15
+floatcheck hold-0.30
+wait 0.15
+floatcheck hold-0.45
+wait 0.15
+floatcheck hold-0.60
+wait 0.15
+floatcheck hold-0.75
+wait 0.15
+floatcheck hold-0.90
+wait 0.15
+floatcheck hold-1.05
+wait 0.3
+floatcheck hold-1.35
+wait 0.5
+floatcheck hold-1.85
+wait 0.5
+floatcheck hold-2.35
+wait 0.5
+floatcheck hold-2.85
+p1jumpheld off
+wait 3
+quit

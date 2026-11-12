@@ -34,7 +34,7 @@ internal static class P2Gold
         if (depth == 0) return;
         if (--depth > 0) return;
         if (inv == null) return;
-        Amount = inv._gold_k__BackingField;
+        Amount = Sane(inv._gold_k__BackingField, "P2's purse after a P2 window");
         Set(inv, p1Held);
         Refresh();
     }
@@ -84,8 +84,22 @@ internal static class P2Gold
     }
     private static int logs;
 
+    // v1.0.5 (players: gold can go into the minus or "irrational"): not reproduced this time (the 1.0.2 chest-pay fix
+    // still holds in its test). Every amount the mod swaps between the players is checked: a negative, NaN or infinite
+    // one is logged with where it came from (once per kind) and set to 0, so it can't spread to the other player.
+    private static readonly HashSet<string> badGoldSeen = new();
+    private static float Sane(float value, string what)
+    {
+        if (!float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f) return value;
+        string kind = float.IsNaN(value) ? "NaN" : float.IsInfinity(value) ? "infinite" : "negative";
+        if (badGoldSeen.Add(kind + what))
+            ModLog.Warn($"[gold] {kind} gold ({value}) in {what} - set to 0. P2 purse {Amount}, swapped in {depth}, P1 held {p1Held}; {Environment.StackTrace}");
+        return 0f;
+    }
+
     private static void Set(PlayerInventory inv, float value)
     {
+        value = Sane(value, "a swap");
         inv._gold_k__BackingField = value;
         inv._goldInt_k__BackingField = Mathf.FloorToInt(value);
     }

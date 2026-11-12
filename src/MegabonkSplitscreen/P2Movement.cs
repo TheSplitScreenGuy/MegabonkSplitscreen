@@ -390,6 +390,125 @@ internal static class P2Movement
         return input == null || !input.hasWallrunActionBound;
     }
 
+    // v1.0.5 (user, real pads: P1's Birdo falls slowly while jump is held after a jump, P2's doesn't; P2 can't climb
+    // ladders - the game climbs while jump is held moving into one): the game reads "the player holds jump" from P1's
+    // PlayerInput (holdingJump / IsHoldingJump). While P2's movement code runs (P2's physics step, and Unity's own
+    // Update / collision calls on P2's copy) it answers with P2's A. Every character (test switch 'fix hold').
+    public static bool HoldFix = true;
+    private static int inputDepth;
+    private static PlayerInput heldInput;
+    private static bool savedHolding;
+    // v1.0.5 Birdo / Roberto float for P2 (user, real pads: P1 falls slowly while holding jump after a jump, P2 didn't).
+    // The game does it in P1's PlayerInventory.PhysicsTick (the only "jump held?" question per physics step - [p2input] probe),
+    // a script P2's movement copy doesn't have. Measured on P1 (float_input test, the real button held): once falling
+    // (PlayerMovement.CanFloat), the fall stays at 2.6 m/s while jump is held; no extra lift. The same for P2.
+    private const float FloatFallSpeed = 2.6f;
+    private static int floatLogs;
+    // Roberto (user: his levitation worked for P1 only; passive Hoarder, so not the Float rule): measured on P1 with the
+    // real jump button held for 6 s (roberto test): rising at 18.5 m/s right after the jump, +2.4 m/s every second
+    // held (32.9 m/s after 6 s, 156 m up), no limit, no gold used; normal falling once let go. Same game spot as the
+    // float (P1's PlayerInventory.PhysicsTick - [p2input] probe), which P2 doesn't have.
+    // User (real pads): P1-Roberto has a limit and can't rise again after letting go; P2 had neither. Measured on P1
+    // (14 s hold): the lift lasts ~11.2 s (~360 m up), then he falls - 12.6 m/s while still held, normal fall if not;
+    // holding again in the air gives only that slow fall; after landing the full lift is there again.
+    private const float RobertoLiftStart = 19.5f, RobertoLiftGain = 2.4f;   // (18.5 measured; P2's lift starts a step later - 1st test ran ~1 m/s behind P1)
+    private const float RobertoLiftTime = 11.2f, RobertoFallSpeed = 12.6f;
+    private static float robertoLift = -1f, robertoLiftUsed;
+    private static bool robertoSpent;
+    private static void RobertoLift()
+    {
+        bool roberto = P2Inventory.P2Character != null && P2Inventory.P2Character.eCharacter == ECharacter.Roberto;
+        if (!P2Abilities.FloatFix || !roberto || Pm.rb == null) return;
+        if (Pm.grounded) { robertoLift = -1f; robertoLiftUsed = 0f; robertoSpent = false; return; }   // landed: the lift is back
+        var v = Pm.rb.velocity;
+        if (!aHeld)
+        {
+            if (robertoLiftUsed > 0f) robertoSpent = true;   // let go after lifting: no more lift until landing
+            robertoLift = -1f;
+            return;
+        }
+        if (!robertoSpent && robertoLiftUsed < RobertoLiftTime)
+        {
+            robertoLift = robertoLift < 0f ? Mathf.Max(v.y, RobertoLiftStart) : robertoLift + RobertoLiftGain * Time.fixedDeltaTime;
+            robertoLiftUsed += Time.fixedDeltaTime;
+            if (robertoLiftUsed >= RobertoLiftTime) robertoSpent = true;
+            if (v.y < robertoLift) Pm.rb.velocity = new Vector3(v.x, robertoLift, v.z);
+            if (floatLogs++ < 3) ModLog.Info($"[float] P2 Roberto lifting: {v.y:F1} -> {robertoLift:F1} m/s (A held)");
+            return;
+        }
+        // lift used up, still holding: the slow fall
+        if (v.y < -RobertoFallSpeed) Pm.rb.velocity = new Vector3(v.x, -RobertoFallSpeed, v.z);
+    }
+
+    private static void Float()
+    {
+        RobertoLift();
+        if (!P2Abilities.FloatFix || !P2Abilities.HasFloat || !aHeld || Pm.grounded || Pm.rb == null) return;
+        bool can;
+        try { can = Pm.CanFloat(); } catch { return; }   // (in P2's context: P2's Float passive)
+        if (!can) return;
+        var v = Pm.rb.velocity;
+        if (v.y >= -FloatFallSpeed) return;
+        Pm.rb.velocity = new Vector3(v.x, -FloatFallSpeed, v.z);
+        if (floatLogs++ < 3) ModLog.Info($"[float] P2 floating: fall {v.y:F1} -> {-FloatFallSpeed} m/s (A held)");
+    }
+
+    public static void EnterInput() => EnterP2Input();
+    public static void ExitInput() => ExitP2Input();
+    private static void EnterP2Input()
+    {
+        if (!HoldFix || inputDepth++ > 0) return;
+        heldInput = MyPlayer.Instance?.playerInput;
+        if (heldInput != null) { savedHolding = heldInput.holdingJump; heldInput.holdingJump = aHeld; }
+        InP2Step = true;
+    }
+    private static void ExitP2Input()
+    {
+        if (!HoldFix && inputDepth == 0) return;
+        if (inputDepth == 0 || --inputDepth > 0) return;
+        if (heldInput != null) heldInput.holdingJump = savedHolding;
+        heldInput = null;
+        InP2Step = false;
+    }
+
+    // While P2's movement code runs: PlayerInput.IsHoldingJump answers with P2's A
+    public static bool InP2Step { get; private set; }
+    public static bool P2HoldingJump => aHeld;
+    private static bool BeforeIsHoldingJump(ref bool __result)
+    {
+        if (!InP2Step) return true;
+        __result = aHeld;
+        return false;
+    }
+    // MyInputManager.GetButton(action) reads Rewired player 0 (P1's pad): the jump button asked during P2's movement
+    // code is P2's A (graveyard test: even the test's own P1-Birdo never fell slowly - the slow fall reads the real button)
+    public static bool TestP1JumpHeld;   // autotest 'p1jumpheld on': the game reads P1's jump button as held (float measurements)
+
+
+    private static bool BeforeGetButton(string action, ref bool __result)
+    {
+        if (TestP1JumpHeld && !InP2Step && action == MyInputManager.Jump) { __result = true; return false; }
+        if (!InP2Step || action == null) return true;
+        if (action != MyInputManager.Jump && action != MyInputManager.JumpBhop) return true;
+        __result = aHeld;
+        return false;
+    }
+
+    public static void ApplyFloatHook(Harmony harmony)
+    {
+        var gb = AccessTools.DeclaredMethod(typeof(MyInputManager), "GetButton");
+        if (gb != null && P2Weapons.IsNativeCodeUnique(gb) && !P2Weapons.IsNativeCodeHooked(gb))
+        {
+            harmony.Patch(gb, prefix: new HarmonyMethod(typeof(P2Movement), nameof(BeforeGetButton)));
+            ModLog.Info("P2Movement: MyInputManager.GetButton (jump) answers for P2 in P2's movement code");
+        }
+        else ModLog.Warn("P2Movement: MyInputManager.GetButton not hookable");
+        var m = AccessTools.DeclaredMethod(typeof(PlayerInput), "IsHoldingJump");
+        if (m == null || !P2Weapons.IsNativeCodeUnique(m) || P2Weapons.IsNativeCodeHooked(m)) { ModLog.Warn("P2Movement: PlayerInput.IsHoldingJump not hookable (P2's float reads the field only)"); return; }
+        harmony.Patch(m, prefix: new HarmonyMethod(typeof(P2Movement), nameof(BeforeIsHoldingJump)));
+        ModLog.Info("P2Movement: PlayerInput.IsHoldingJump answers for P2 in P2's float step");
+    }
+
     // Called from Ticker.FixedUpdate
     public static void FixedTick()
     {
@@ -454,16 +573,30 @@ internal static class P2Movement
             // In P2's stat context: the movement code reads movement speed, jump height, extra jumps... from the
             // stats - P2's tomes (user: every tome effect should work for P2)
             bool entered = P2Inventory.EnterP2();
+            // v1.0.5 (players: Birdo / Roberto's float lifted P1, not P2; float_base test: P2 Birdo holding jump peaked at
+            // 7.8 m while P1, not holding anything, rose to 20.9 m): the float's lift goes to "the player" - with the Float
+            // passive, P2's movement copy is the player for P2's own step
+            var p1Mp = Assets.Scripts.Actors.Player.MyPlayer.Instance;
+            var p1Own = p1Mp != null ? p1Mp.playerMovement : null;
+            bool asPlayer = P2Abilities.FloatFix && P2Abilities.HasFloat && p1Mp != null;
             try
             {
+                if (asPlayer) { PlayerMovement.Instance = Pm; p1Mp.playerMovement = Pm; }
+                EnterP2Input();   // "the player holds jump" = P2's own A for P2's step (float, ladders)
                 if (!bisect)
                     Muted(() =>
                     {
                         Pm.SetBetterInput(input);
                         Pm.MovementTick();
+                        Float();
                     });
             }
-            finally { if (entered) P2Inventory.Exit(); }
+            finally
+            {
+                ExitP2Input();
+                if (asPlayer) { p1Mp.playerMovement = p1Own; PlayerMovement.Instance = p1Pm; }
+                if (entered) P2Inventory.Exit();
+            }
             Pm.stuckTimer = 0f;
             if ((logs >= 100 && logs < 140) || logs % 10 == 0 && logs < 100)
                 ModLog.Info($"[move] state tick {logs}: y {Pm.transform.position.y:F2}, vel y {Velocity().y:F2}, layer {Pm.gameObject.layer}, " +
@@ -619,7 +752,7 @@ internal static class P2Movement
     private static int p2JumpLogs, p1PulseTicks, p1PulseLogs;
     private static bool p1WasGroundedAtPress;
     private static int p2Trace, p1Trace, traceLogs, p1TraceLogs, launchLogs, stuckLogs;
-    private static float lastVy, lastStuckTimer, p2MinVy;
+    private static float lastVy, lastStuckTimer, p2MinVy, p2LastAirVy;
     private static int landLogs;
 
     private static void LandingDamage(float speed)
@@ -691,11 +824,14 @@ internal static class P2Movement
         {
             p2ApexY = Mathf.Max(p2ApexY, y);
             p2MinVy = Mathf.Min(p2MinVy, Velocity().y);
+            p2LastAirVy = Velocity().y;
         }
         // Fall damage (user: P2 took none). The game's rule, measured on P1 (v0.32.x [fall] log): nothing below
         // PlayerHealth.minFallDamageSpeed (30), then 0..100 damage up to maxFallDamageSpeed (140) - speed 42.7 cost
         // P1 12 HP (11.5 -> 12), independent of max HP. P2's own FallDamageReduction applies.
-        if (!air && p2Air) LandingDamage(-p2MinVy);
+        // v1.0.5 (user: P2 took fall damage after flying up, falling and slowing down before the ground - Roberto's /
+        // Birdo's slow fall): the speed at landing (the last tick in the air), not the fastest of the whole fall
+        if (!air && p2Air) LandingDamage(-Mathf.Min(0f, p2LastAirVy));
         if (!air && p2Air && p2JumpLogs < 25 && p2ApexY - p2TakeoffY > 0.5f)
         {
             p2JumpLogs++;
@@ -768,12 +904,14 @@ internal static class P2Movement
         if (!__state) return;
         MuteOn();
         contextEntered.Push(P2Inventory.EnterP2());
+        EnterP2Input();
     }
 
     private static Exception MuteFinalizer(Exception __exception, bool __state)
     {
         if (__state)
         {
+            ExitP2Input();
             if (contextEntered.Count > 0 && contextEntered.Pop()) P2Inventory.Exit();
             MuteOff();
             var p1 = MyPlayer.Instance?.GetComponent<PlayerMovement>();

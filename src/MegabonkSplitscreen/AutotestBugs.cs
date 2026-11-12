@@ -32,6 +32,16 @@ internal static partial class Autotest
                     else if (what == "shield") P2PowerUps.ShieldFix = on;
                     else if (what == "timefreeze") P2Health.TimeFreezeFix = on;
                     else if (what == "chestpay") P2Interact.PayFix = on;
+                    else if (what == "cactus") P2World.CactusFix = on;
+                    else if (what == "ladder") P2World.LadderFix = on;
+                    else if (what == "ranged") P2World.RangedFix = on;
+                    else if (what == "shrineboth") P2Rewards.BothFix = on;
+                    else if (what == "float") P2Abilities.FloatFix = on;
+                    else if (what == "spawnside") P2Spawns.PerEnemyFix = on;
+                    else if (what == "hold") P2Movement.HoldFix = on;
+                    else if (what == "pad") P2World.PadFix = on;
+                    else if (what == "lava") P2World.LavaFix = on;
+                    else if (what == "controls") P2Select.ControlsFix = on;
                     else { Report($"fix: unknown '{what}'"); return true; }
                     Report($"fix {what} {(on ? "ON" : "OFF")}");
                 }
@@ -41,6 +51,143 @@ internal static partial class Autotest
                 return true;
             case "gomain":   // quit to the main menu (the game's TransitionUI.LoadMenu; PauseUi.GoToMain only shows the pause window's main page)
                 Cheat(() => { var t = Object.FindObjectOfType<TransitionUI>(); Report($"gomain: TransitionUI {(t != null ? "found" : "missing")}"); t?.LoadMenu(); });
+                return true;
+            case "needpads": return true;   // (read at the join: P2 waits for its own pad)
+            case "handover":   // the run is the user's from here: the script ends, keyboard / mouse on, real pads drive both players
+                {
+                    var p2Joy = PlayerJoin.P2Joystick;
+                    string p2 = p2Joy != null ? $"P2 on pad #{p2Joy.id} '{p2Joy.name}'" : PlayerJoin.VirtualP2 ? "P2 has NO pad (joined without one - no second pad was on)" : "no P2";
+                    try
+                    {
+                        var kb = Rewired.ReInput.controllers?.Keyboard; if (kb != null) kb.enabled = true;
+                        var mouse = Rewired.ReInput.controllers?.Mouse; if (mouse != null) mouse.enabled = true;
+                    }
+                    catch { }
+                    Report($"handover: the run is the player's now ({p2})");
+                    EndForPlayer();
+                }
+                return true;
+            case "p1jumpheld":   // p1jumpheld on|off: the game reads P1's real jump button as held
+                P2Movement.TestP1JumpHeld = a.Length < 2 || a[1] != "off";
+                Report($"p1jumpheld {(P2Movement.TestP1JumpHeld ? "ON" : "OFF")}");
+                return true;
+            case "nospawns":   // nospawns on|off: the game's own summoners spawn nothing (the test's 'spawn' still works)
+                P2Spawns.TestNoSummonerSpawns = a.Length < 2 || a[1] != "off";
+                Report($"nospawns {(P2Spawns.TestNoSummonerSpawns ? "ON" : "OFF")}");
+                return true;
+            case "floatcheck": Cheat(() => Report($"floatcheck {(a.Length > 1 ? a[1] : "")}: {FloatCheck()}")); return true;
+            case "enemysplit": Cheat(() => { if (a.Length > 1 && a[1] == "reset") P2Spawns.ResetCounts(); Report($"enemysplit {(a.Length > 1 ? a[1] : "")}: {EnemySplit()}"); }); return true;
+            case "hp":   // both players' HP
+                Cheat(() => Report($"hp {(a.Length > 1 ? a[1] : "")}: P1 {MyPlayer.Instance?.inventory?.playerHealth?.hp}/{MyPlayer.Instance?.inventory?.playerHealth?.maxHp}, P2 {P2Health.Hp}/{P2Health.MaxHp}"));
+                return true;
+            case "tocactus":   // tocactus <p>: that player against the nearest damaging map object (DamagePlayerCollider), pushed into it
+            case "toladder":   // toladder <p>: that player inside the nearest ladder's trigger, at its bottom
+                Cheat(() =>
+                {
+                    bool cactus = a[0] == "tocactus";
+                    int who = a.Length > 1 && a[1] == "p2" ? 1 : 0;
+                    Vector3 from = PlayerPos(who);
+                    Component target = cactus
+                        ? Object.FindObjectsOfType<DamagePlayerCollider>().OrderBy(x => (x.transform.position - from).sqrMagnitude).FirstOrDefault()
+                        : Object.FindObjectsOfType<Ladder>().OrderBy(x => (x.transform.position - from).sqrMagnitude).FirstOrDefault();
+                    int count = cactus ? Object.FindObjectsOfType<DamagePlayerCollider>().Length : Object.FindObjectsOfType<Ladder>().Length;
+                    if (target == null) { Report($"{a[0]}: none on this map"); return; }
+                    var col = target.GetComponentInChildren<Collider>();
+                    var b = col != null ? col.bounds : new Bounds(target.transform.position, Vector3.one);
+                    Vector3 at, vel = Vector3.zero;
+                    if (cactus)
+                    {
+                        // beside it on the side facing the player, 0.3 m off its bounds, moving into it
+                        Vector3 side = from - b.center; side.y = 0f;
+                        if (side.sqrMagnitude < 0.01f) side = Vector3.forward;
+                        side.Normalize();
+                        float ext = Mathf.Max(b.extents.x, b.extents.z);
+                        at = new Vector3(b.center.x, b.min.y + 1.2f, b.center.z) + side * (ext + 0.6f);
+                        vel = -side * 6f;
+                    }
+                    else
+                    {
+                        // in front of the ladder (its forward or back, 'toladder <p> back'), walking into it
+                        Vector3 f = target.transform.forward; f.y = 0f; f = f.sqrMagnitude > 0.01f ? f.normalized : Vector3.forward;
+                        if (a.Length > 2 && a[2] == "back") f = -f;
+                        at = new Vector3(b.center.x, b.min.y + 1.2f, b.center.z) - f * 0.8f;
+                        Vector3 toward = b.center - at; toward.y = 0f;   // (user: the old dir walked away from it)
+                        pads[who].dir = toward.sqrMagnitude > 0.0001f ? toward.normalized : f;
+                        pads[who].target = null;
+                    }
+                    var pm = who == 0 ? MyPlayer.Instance.playerMovement : P2Movement.Pm;
+                    if (who == 0) MyPlayer.Instance.transform.position = at;
+                    pm.transform.position = at;
+                    if (pm.rb != null) { pm.rb.position = at; pm.rb.velocity = vel; }
+                    Report($"{a[0]}: P{who + 1} at '{target.name}' ({count} on this map) - collider '{col?.name}' {col?.GetIl2CppType().Name} trigger {col?.isTrigger}, bounds centre {b.center} size {b.size}; placed at {at}, velocity {vel}");
+                });
+                return true;
+            case "makeladder":   // makeladder <p> [flip]: a ladder (trigger + the game's Ladder script) 1.5 m ahead of that player along +x, the player walking into it
+                Cheat(() =>
+                {
+                    int who = a.Length > 1 && a[1] == "p2" ? 1 : 0;
+                    bool flip = a.Length > 2 && a[2] == "flip";
+                    Vector3 at = PlayerPos(who);
+                    Vector3 d = Vector3.right;
+                    var go = new GameObject("MegabonkSplitscreen_TestLadder");
+                    go.transform.position = at + d * 1.5f + Vector3.up * 5f;
+                    go.transform.rotation = Quaternion.LookRotation(flip ? d : -d);   // forward toward / away from the player
+                    int layer = LayerMask.NameToLayer("Ladder");
+                    var real = Object.FindObjectOfType<Ladder>();
+                    if (real != null) layer = real.gameObject.layer;
+                    if (layer >= 0) go.layer = layer;
+                    var box = go.AddComponent<BoxCollider>();
+                    box.isTrigger = true;
+                    box.size = new Vector3(2f, 12f, 0.5f);
+                    go.AddComponent<Ladder>();
+                    // visible for a player's own test: a plank the ladder's size (its own collider removed)
+                    var plank = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    var pc = plank.GetComponent<Collider>(); if (pc != null) Object.Destroy(pc);
+                    plank.name = "MegabonkSplitscreen_TestLadderPlank";
+                    plank.transform.SetParent(go.transform, false);
+                    plank.transform.localScale = new Vector3(2f, 12f, 0.2f);
+                    pads[who].dir = d;
+                    pads[who].target = null;
+                    Report($"makeladder: at {go.transform.position}, forward {go.transform.forward}, layer {go.layer} ('{LayerMask.LayerToName(go.layer)}'), P{who + 1} walks {d}");
+                });
+                return true;
+            case "climbstate":
+                Cheat(() =>
+                {
+                    string S(PlayerMovement m) => m == null ? "-" : $"y {m.transform.position.y:F2}, vy {m.rb?.velocity.y:F1}, onLadder {m.onLadder}, grounded {m.grounded}, state {m.lastMovementState}";
+                    Report($"climb {(a.Length > 1 ? a[1] : "")}: P1 {S(MyPlayer.Instance?.playerMovement)} | P2 {S(P2Movement.Pm)}");
+                });
+                return true;
+            case "toshrine":   // toshrine <p1|p2|both>: onto the nearest charge shrine (both: P1 at its centre, P2 1.5 m from it)
+                Cheat(() =>
+                {
+                    string whoS = a.Length > 1 ? a[1] : "both";
+                    var s = Object.FindObjectsOfType<ChargeShrine>().Where(x => x != null && !x.completed).OrderBy(x => (x.transform.position - PlayerPos(0)).sqrMagnitude).FirstOrDefault();
+                    if (s == null) { Report("toshrine: no charge shrine left"); return; }
+                    Vector3 c = s.transform.position + Vector3.up * 1.5f;
+                    void Put(int who, Vector3 at)
+                    {
+                        var pm = who == 0 ? MyPlayer.Instance.playerMovement : P2Movement.Pm;
+                        if (who == 0) MyPlayer.Instance.transform.position = at;
+                        pm.transform.position = at;
+                        if (pm.rb != null) { pm.rb.position = at; pm.rb.velocity = Vector3.zero; }
+                    }
+                    if (whoS != "p2") Put(0, c + Vector3.right * 1.5f);
+                    if (whoS != "p1") Put(1, c - Vector3.right * 1.5f);
+                    float r = -1f; try { if (s.zoneRenderer != null) r = s.zoneRenderer.bounds.extents.x; } catch { }
+                    Report($"toshrine {whoS}: '{s.name}' at {s.transform.position}, charge time {s.chargeTime:F1}, zone radius {r:F1}");
+                });
+                return true;
+            case "shrinestate":
+                Cheat(() =>
+                {
+                    var list = Object.FindObjectsOfType<ChargeShrine>().OrderBy(x => (x.transform.position - PlayerPos(0)).sqrMagnitude).Take(2)
+                        .Select(x => $"'{x.name}' {Vector3.Distance(x.transform.position, PlayerPos(0)):F0} m from P1: progress {x.chargeProgress:F2}, charging {x.charging}, completed {x.completed}, reward given {x.rewardGiven}");
+                    Report($"shrinestate: {string.Join(" | ", list)}");
+                });
+                return true;
+            case "deathmenu":   // the death screen's menu button (the game's DeathScreen.GoToMenu)
+                Cheat(() => { var ds = Object.FindObjectOfType<DeathScreen>(); Report($"deathmenu: DeathScreen {(ds != null ? "found" : "missing")}"); ds?.GoToMenu(); });
                 return true;
             case "deadlisteners": Cheat(() => Report($"deadlisteners {(a.Length > 1 ? a[1] : "")}: {DeadListeners()}")); return true;
             case "invcheck": Cheat(() => Report($"invcheck {(a.Length > 1 ? a[1] : "")}: {InvCheck()}")); return true;

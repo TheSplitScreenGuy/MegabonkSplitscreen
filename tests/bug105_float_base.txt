@@ -1,0 +1,27 @@
+chars Birdo Birdo tier 1 map Forest
+# Birdo float probe: both Birdo, 40 m apart. P1 jumps + holds jump (the game's own float), then P2 (fix on).
+# [float] log lines: CanFloat / Float passive Tick / jump force calls per second, for whom.
+wait 2
+godp1
+godp2
+nopowerups
+clear
+home 40
+wait 2
+jump p1
+wait 0.1
+hold p1 3
+wait 0.5
+floatcheck p1-0.6
+wait 0.6
+floatcheck p1-1.2
+wait 4
+jump p2
+wait 0.1
+hold p2 3
+wait 0.5
+floatcheck p2-0.6
+wait 0.6
+floatcheck p2-1.2
+wait 4
+quit

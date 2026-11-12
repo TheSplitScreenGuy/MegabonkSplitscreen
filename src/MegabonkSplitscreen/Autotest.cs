@@ -193,10 +193,12 @@ internal static partial class Autotest
                 }
                 // v0.42.3 (a wireless pad switched itself off mid-session): P2's input comes from the script anyway, so
                 // after a short wait the one pad there is stands in for P2 (menus and P1 are driven by code)
-                if (Time.unscaledTime - phaseSince > 1f && PlayerJoin.JoinFirstFreePad(anyPad: true)) { Report("no second pad: P1's pad stands in for P2 (script input only)"); return; }
+                // 'needpads' in the script (a run handed to the player): P2 must get its own real pad - no stand-ins
+                bool needPads = lines.Contains("needpads");
+                if (!needPads && Time.unscaledTime - phaseSince > 1f && PlayerJoin.JoinFirstFreePad(anyPad: true)) { Report("no second pad: P1's pad stands in for P2 (script input only)"); return; }
                 // v0.43.7 (user: the pads go idle while away): no pad at all - P2 joins without one
-                if (Time.unscaledTime - phaseSince > 2f && PlayerJoin.JoinVirtual()) { Report("no pad at all: P2 joins without one (script input only)"); return; }
-                if (Time.unscaledTime - phaseSince > 22f) { Report("FAIL: P2 couldn't join"); Quit(); }
+                if (!needPads && Time.unscaledTime - phaseSince > 2f && PlayerJoin.JoinVirtual()) { Report("no pad at all: P2 joins without one (script input only)"); return; }
+                if (!needPads && Time.unscaledTime - phaseSince > 22f) { Report("FAIL: P2 couldn't join"); Quit(); }   // (a run for the player waits for the pad, never quits)
             }
             return;   // the join sets up P2's character select next frame
         }
@@ -1232,7 +1234,7 @@ internal static partial class Autotest
                     Cheat(() => Report("menu state: " + MenuState()));
                     break;
                 case "hazards":   // which hazard objects this map has (jump pads, water/lava, rails, tornadoes, healing zones)
-                    Cheat(() => Report($"hazards on this map: jump pads {Object.FindObjectsOfType<JumpPad>().Length}, water {Object.FindObjectsOfType<Water>().Length}, " +
+                    Cheat(() => Report($"hazards on this map: jump pads {Object.FindObjectsOfType<JumpPad>().Length}, water {Object.FindObjectsOfType<Water>().Length} (damaging {Object.FindObjectsOfType<Water>().Count(w => w.isDamageZone)}), lava {Object.FindObjectsOfType<Lava>().Length}, ladders {Object.FindObjectsOfType<Ladder>().Length}, " +
                         $"rails {Object.FindObjectsOfType<Rail>().Length}, tornadoes {Object.FindObjectsOfType<Tornado>().Length}, healing zones {Object.FindObjectsOfType<HealingZone>().Length}"));
                     break;
                 case "hazard":   // hazard <pad|water|rail> <p>: that player dropped onto the nearest one; then 'hazardstate'
@@ -1245,6 +1247,8 @@ internal static partial class Autotest
                         {
                             "water" => Object.FindObjectsOfType<Water>().OrderBy(x => (x.transform.position - from).sqrMagnitude).FirstOrDefault(),
                             "rail" => Object.FindObjectsOfType<Rail>().OrderBy(x => (x.transform.position - from).sqrMagnitude).FirstOrDefault(),
+                            "lava" => (Component)Object.FindObjectsOfType<Lava>().OrderBy(x => (x.transform.position - from).sqrMagnitude).FirstOrDefault()
+                                      ?? Object.FindObjectsOfType<Water>().Where(w => w.isDamageZone).OrderBy(x => (x.transform.position - from).sqrMagnitude).FirstOrDefault(),
                             _ => Object.FindObjectsOfType<JumpPad>().OrderBy(x => (x.transform.position - from).sqrMagnitude).FirstOrDefault(),
                         };
                         if (target == null) { Report($"hazard {kind}: none on this map"); return; }
@@ -1424,6 +1428,7 @@ internal static partial class Autotest
                     break;
             }
         }
+        if (!Active) return;   // 'handover': the game stays open for the player (v1.0.5: it quit right after the handover)
         Report("script done (end of file)");
         Quit();
     }
@@ -2441,6 +2446,14 @@ internal static partial class Autotest
         uint crc = 0xFFFFFFFFu;
         foreach (var b in d) crc = crcTable[(crc ^ b) & 0xFF] ^ (crc >> 8);
         return crc ^ 0xFFFFFFFFu;
+    }
+
+    // 'handover': no more script, the game stays open for the player
+    private static void EndForPlayer()
+    {
+        line = lines.Count;
+        phase = "done";
+        Active = false;
     }
 
     private static void Quit()

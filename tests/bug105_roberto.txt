@@ -1,0 +1,63 @@
+chars Roberto Roberto tier 1 map Forest
+# Roberto's levitation limit, measured on P1 (the real jump button held, p1jumpheld). User: P1 is capped (falls after a
+# while - slower while held), and can't rise again after letting go until... landing? Hold 14 s, let go 1 s, hold 4 s,
+# land, hold again.
+wait 2
+godp1
+godp2
+nopowerups
+nospawns on
+clear
+wait 1
+p1jumpheld on
+jump p1
+wait 1
+floatcheck h-1
+wait 1
+floatcheck h-2
+wait 1
+floatcheck h-3
+wait 1
+floatcheck h-4
+wait 1
+floatcheck h-5
+wait 1
+floatcheck h-6
+wait 1
+floatcheck h-7
+wait 1
+floatcheck h-8
+wait 1
+floatcheck h-9
+wait 1
+floatcheck h-10
+wait 1
+floatcheck h-11
+wait 1
+floatcheck h-12
+wait 1
+floatcheck h-13
+wait 1
+floatcheck h-14
+p1jumpheld off
+wait 1
+floatcheck released-1
+p1jumpheld on
+wait 1
+floatcheck rehold-1
+wait 1
+floatcheck rehold-2
+wait 1
+floatcheck rehold-3
+p1jumpheld off
+wait 12
+floatcheck landed?
+p1jumpheld on
+jump p1
+wait 1
+floatcheck again-1
+wait 1
+floatcheck again-2
+p1jumpheld off
+wait 5
+quit

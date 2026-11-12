@@ -19,7 +19,8 @@ internal static class ModLog
     public static bool DebugLogging { get; set; }
     public static bool Debug => DebugLogging || Autotest.Active;
 
-    private static readonly string[] KeptTags = { "[down]", "[pads]" };
+    // Rare, player-relevant events kept in players' logs too (v1.0.5: a door teleport into a void left no trace)
+    private static readonly string[] KeptTags = { "[down]", "[pads]", "[door]", "[world]", "[shrine]", "[float]" };
 
     public static void Init(ManualLogSource log, string dir)
     {

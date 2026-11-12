@@ -1,0 +1,46 @@
+chars Birdo Roberto tier 1 map Forest
+# P2 Roberto's lift with P1's rules: hold 14 s (lift ~11.2 s, then a 12.6 m/s fall while held), let go 1 s, hold again
+# (only the slow fall), land, hold again (lift back). P1 measured: h-11 y 350 vy 44.8, h-12 vy -12.6, released -43,
+# rehold -12.6, after landing 20.9 / 23.4.
+wait 2
+godp1
+godp2
+nopowerups
+nospawns on
+clear
+wait 1
+jump p2
+wait 0.1
+hold p2 14
+wait 0.9
+floatcheck h-1
+wait 1
+floatcheck h-2
+wait 4
+floatcheck h-6
+wait 5
+floatcheck h-11
+wait 1
+floatcheck h-12
+wait 1
+floatcheck h-13
+wait 1
+floatcheck h-14
+wait 1
+floatcheck released-1
+hold p2 3
+wait 1
+floatcheck rehold-1
+wait 1
+floatcheck rehold-2
+wait 13
+floatcheck landed?
+jump p2
+wait 0.1
+hold p2 3
+wait 0.9
+floatcheck again-1
+wait 1
+floatcheck again-2
+wait 5
+quit
