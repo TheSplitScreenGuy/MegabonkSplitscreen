@@ -2,6 +2,76 @@
 
 Goal: 2-player local splitscreen for Megabonk (single-player Unity game).
 
+## RELEASE 1.0.6-alpha ("SplitBonk V1.0.6 Alpha", 2026-11-12)
+Character select stick drift fix, P2 give-up button (README.md + release\README.txt mention it), TEMP diagnostics kept
+in players' logs ([down] P1 watch after revives, [down] P2 no-damage watch). dist\SplitBonk-V1.0.6-Alpha.zip by
+make_release.ps1 (231 files, 0 backslash names, console-off cfg, DLL = the build = installed, SHA256 375E9178...2301);
+1.0.5 zip moved to dist\old. Open: P2 takes no damage after P1's first death (desert tier 3) - waiting for a log.
+
+## User (2026-11-12): P2's extra jumps "don't feel right" (suspected the float/levitation fixes) - NOT reproduced
+Measured with Feathers x2 (ExtraJumps 2, JumpHeight 9 -> 11.7 for both), 'jumps' = upward kicks (landings count too):
+- GetJumpForce is the same for both (540 -> 702 with Feathers); P2's tap 9.82 m = P1's. Earlier "P2 5.7 m" results
+  were one test spot with something overhead (always exactly 5.67 m) - not a difference.
+- The 1.0.5 "jump held" fix ('fix hold off/on'): no change to P2's jumps.
+- Tried and REMOVED: Jump Bhop answered with P2's own (unbound) button - wrong, P1 itself bunny-hops while holding
+  jump (7 kicks in 2.5 s); a jump-press buffer for P2 like P1's PlayerInput (jumpBufferTicks 4) - no difference:
+  tests\bug106_jumpbuffer.txt (natural spawns off; first run spoiled by P2 landing on a skeleton): every tap fired an
+  extra jump with and without it (2 taps ~22 m, 3 taps ~52 m).
+- User's idea: air jump while falling - does it cancel the fall? tests\bug106_airjump_momentum.txt ('jumps' logs each
+  kick's vertical speed before -> after): the game's rule, the same for both players - falling: the speed is reset to
+  the jump speed (P1 -14.9 -> 22.8); rising: the jump is added on top (P1 15.8 -> 38.5, P2 9.9 -> 32.7, +22.7/+22.8).
+- User (as Calcium): an air jump sometimes "only jumped a tiny bit" while moving. tests\bug106_calcium_airjump.txt
+  (running) vs bug106_calcium_still.txt (standing): the game's own rule, identical for P1 and P2 - standing still the
+  fall is always reset (-13 -> +21.5); running, the air jump mostly only adds ~+18.7 to the fall (-20.7 -> -2.0 P1,
+  -16.4 -> +2.3 P2), now and then a full reset. Not a mod difference.
+- P2's ground jump looked weaker (17.2 vs 23.0 m/s take-off): tests\bug106_jump_swap.txt - it's the test spot: at
+  'home 300's P2 spot BOTH players take off at 17.2 (5.67 m), at P1's spot both at 23.0 (9.82 m). No P2 difference.
+- Test words: 'jumps <p> <secs> [label]', 'jumpforce', 'p1hold <secs>', 'p1tap' (doesn't fire yet - a single-step
+  press is overwritten by the game's own input read). Next: the user's description of what feels off.
+- Give-up labels: "AGAIN: DOWN P2" / "AGAIN: RUN ENDS" (user: "ENDS THE RUN" too big) + TMP auto-size down to 60 %.
+
+## Pause menu: PLAYER 2: GIVE UP (user's idea, 2026-11-12 - escape hatch, e.g. P2 stuck taking no damage)
+CameraModeToggle.Copy makes a second copy of the game's pause button under the camera button. One press arms it (label
+"PRESS AGAIN TO DOWN P2", 3 s; "AGAIN: ENDS THE RUN" if P1 is down), the second downs P2 (P2Health.TakeDamage, test
+health off) and resumes; "PLAYER 2 IS DOWN" while down. tests\pause_p2_giveup.txt: arm -> P2 up, confirm -> P2 down +
+gravestone, menu closed, button inert while down, P1 revives P2. In the column it pushed Exit off the screen; user:
+"move it to the right of restart" - DONE: out of the column's layout (LayoutElement.ignoreLayout), placed beside
+B_Restart each frame (Restart's size, 24 px gap); Restart's navigation is Automatic, so right/left find it by
+themselves (test: Restart -> right -> give up -> left -> Restart, Restart -> down -> Exit). Exit fully on screen again.
+- Character select stick fix CONFIRMED by the user on real pads; the user's log shows the cause: polling 'Left Stick X'
+  Negative while the stick read 0.00 (ignored now).
+
+## User (2026-11-12, real pads): back at character select after a run, P2's cursor stuck in the skin row
+User: "like the controller has stick drift to go left" (the skin row is left of P2's grid, so a constant left keeps the
+cursor there). Log: P2's panel re-bound fine (21 of 21 buttons), skin row bound late. P2Select read the stick with
+PollControllerForFirstAxis only - polling can report an axis that isn't pushed (seen before with released triggers).
+FIX (untested on pads; autotests can't feed real axes): a polled stick direction counts only if the stick's own value
+(joy.GetAxisById) is at least 0.5 that way; an ignored one is logged as [pads] (kept in players' logs).
+User (real pads): no more drift into the skins, d-pad fine, but stick up/down did nothing. Log: X values ramp normally;
+Y read with the opposite sign to polling's pole. Now only |value| >= 0.5 is checked, direction from polling (not yet
+confirmed on pads).
+
+## Player report after 1.0.5 (2026-11-12): P2 takes no damage after P1's first death (desert tier 3, stage 2, ghosts)
+The user re-read the friend's text: it IS P2 (a middle "it was P1" reading was wrong). Autotests below didn't
+reproduce either reading. New TEMP diagnostic kept in players' logs: P2Health.WatchNoDamage - an enemy within P2's
+capsule for 2 s while P2's HP + shield don't drop -> one [down] warning with everything that decides P2's contact
+damage (test health, game health, damage cooldown, evasion/armor, time freeze, paused, layer mask, the last contact
+check's outcome, P1 down, P2's effects); max 6 per run. Checked: fires during the clock's freeze with "time freeze".
+Earlier tests and readings:
+- tests\bug106_p1down_desert.txt / bug106_p1killed_desert.txt (P2's damage, stage 2, P1 down): P2 hit normally.
+- tests\bug106_p1revived_damage.txt (Forest: P1 down, revived by P2 at the gravestone): P1's colliders back on, damage
+  from skeletons 135 -> 75 and ghosts -> 46.
+- tests\bug106_revive_then_portal.txt (user's route: Desert tier 3 stage 1, P1 down, revived, portal): stage 2 P1 hit
+  116 -> down.
+- tests\bug106_down_portal_p2down.txt (user's route: P1 down on stage 1, P2 takes the portal = P1 revived by the new
+  stage, then P2 down): P1 hit 135 -> 68, after P2 down 69 -> 2 -> 0. One run P1 ended 73 m up, out of reach - a desert
+  tornado lifted P1 (the user watched it; game hazard).
+- Diagnostics added (TEMP): [down] P1 watch for 60 s after every P1 revive (Downed.WatchP1, kept in players' logs) -
+  P1's damage state 5 s in, and a warning with the full state if an enemy touches P1 for 2 s without HP lost;
+  [hit0] (autotest only) for P2's game hits that took nothing; 'p1cols' test command.
+- Found in passing, not changed: Revive.Clear (rise cut short) turns P1's colliders back on but leaves P1's rigidbody
+  kinematic.
+
 ## Players' reports after 1.0.4 (2026-11-12) - tests\bug105_*.txt; test switches 'fix cactus|ladder|ranged|shrineboth|float|spawnside|controls on|off', 'nospawns on|off'
 - Spawns "3:1, P1 gets 2-3, P2 a horde": REPRODUCED (enemies appeared near P1 32 / P2 96; at 45 s P1 1 vs P2 12
   around). Cause: GetEnemySpawnPositionBiased calls GetEnemySpawnPosition inside it and both were hooked - two coin

@@ -1,0 +1,57 @@
+chars Monke Fox tier 3 map Desert
+# Player report (1.0.5): "on desert tier 3, the second map, when p1 died for the first time, p2 could not take any
+# damage". bug106_p1down_desert.txt ('kill p1' = HP set to 0) didn't reproduce it. Here P1 dies for real: killed by
+# skeletons (the game's own hit and death path). P2 (Health tomes, test health until P1 is down) then gets skeletons
+# on it; [hit0] logs hits that took nothing.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+toportal p2
+wait 1
+p2interact
+wait 4
+killbosses
+wait 3
+killbosses
+wait 3
+toportal p2 far
+wait 1
+toportal p2
+wait 1
+p2interact
+wait 14
+stagestate
+clear
+clearloot
+home 60
+tome p2 Health 15
+wait 2
+# ---- P1 killed by skeletons
+godp1 off
+health before P1's fight
+spawn p1 Skeleton 4 1.5
+wait 3
+downstate
+health P1 killed?
+wait 2
+downstate
+clear
+wait 1
+# ---- P2 hit after P1's real death
+godp2 off
+health P2 start
+spawn p2 Skeleton 2 1.5
+wait 1
+health 1 s
+touching p2
+wait 2
+health 3 s
+touching p2
+wait 3
+health 6 s
+shot p1killed_p2hits
+quit

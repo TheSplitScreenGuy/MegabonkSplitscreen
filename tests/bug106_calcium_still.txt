@@ -1,0 +1,37 @@
+chars Calcium Calcium
+# Control for bug106_calcium_airjump (running: the air jump while falling mostly ADDED +18.7 instead of resetting the
+# fall - for P1 and P2 alike). Here standing still: the air jump 1.2 s after the ground jump, twice per player.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+nospawns on
+home 300
+item p1 Feathers 2
+item p2 Feathers 2
+wait 3
+clear
+jumps p1 5 P1 still air jump at 1.2 s
+jump p1
+wait 1.2
+jump p1
+wait 5.5
+jumps p2 5 P2 still air jump at 1.2 s
+jump p2
+wait 1.2
+jump p2
+wait 5.5
+jumps p1 5 P1 still air jump at 1.2 s (2)
+jump p1
+wait 1.2
+jump p1
+wait 5.5
+jumps p2 5 P2 still air jump at 1.2 s (2)
+jump p2
+wait 1.2
+jump p2
+wait 5.5
+quit

@@ -1,0 +1,22 @@
+chars Monke Monke
+# P2's jump ignores the JumpHeight stat (P2 5.7 m with or without Feathers; P1 5.95 -> 9.8 m). The game's
+# PlayerMovement.GetJumpForce for both players, before and after Feathers x2 (JumpHeight 9 -> 11.7), and P2's real
+# take-off ([jump] lines in the mod log).
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 300
+wait 3
+jumpforce no items
+item p1 Feathers 2
+item p2 Feathers 2
+wait 1.5
+jumpforce Feathers x2
+jumps p2 5 P2 tap with Feathers
+jump p2
+wait 5.5
+quit

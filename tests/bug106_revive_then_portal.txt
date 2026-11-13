@@ -1,0 +1,66 @@
+chars Monke Fox tier 3 map Desert
+# Player report (1.0.5, clarified): after P1's first death P1 took no damage (desert tier 3). User's route: Desert tier 3
+# stage 1, P1 dies, P2 revives P1 at the gravestone, through the portal, then check P1's damage in stage 2.
+# P1 on real health after the revive ('kill p1' switches P1's test health off). One skeleton at P1 (a tier 3 hit is big).
+wait 2
+godp2
+open
+clear
+clearloot
+nopowerups
+home 60
+wait 1
+# ---- stage 1: P1 down, P2 revives P1
+kill p1
+wait 2
+downstate
+tograve p2
+wait 0.5
+go p2 grave
+waitrevive p1
+stop p2
+wait 2
+downstate
+p1cols after revive
+health stage 1 after revive
+spawn p1 Skeleton 1 1.5
+wait 1
+health stage 1, 1 s of a skeleton
+clear
+wait 1
+# ---- through the portal (P2 summons, kills, enters)
+toportal p2
+wait 1
+p2interact
+wait 4
+killbosses
+wait 3
+killbosses
+wait 3
+toportal p2 far
+wait 1
+toportal p2
+wait 1
+p2interact
+wait 14
+stagestate
+clear
+clearloot
+wait 2
+# ---- stage 2: P1's damage
+downstate
+p1cols stage 2
+health stage 2 start
+spawn p1 Skeleton 1 1.5
+wait 0.7
+health stage 2, 0.7 s of a skeleton
+touching p1
+wait 1.5
+health stage 2, 2.2 s
+clear
+spawn p1 Ghost 2 1.5
+wait 2
+health stage 2 ghosts 2 s
+touching p1
+shot revive_portal_p1hits
+quit

@@ -1,0 +1,58 @@
+chars Monke Fox tier 3 map Desert
+# Player report (1.0.5, clarified): after P1's first death P1 took no damage (desert tier 3). User's route idea: P1 dies
+# on stage 1, P2 goes through the portal (the new stage brings P1 back - Downed.OnStageStart, no gravestone rise), then
+# P2 goes down in stage 2: is P1 hurt by enemies? P1 on real health ('kill p1' switches P1's test health off).
+wait 2
+godp2
+open
+clear
+clearloot
+nopowerups
+home 60
+wait 1
+# ---- stage 1: P1 down, P2 takes the portal
+kill p1
+wait 2
+downstate
+toportal p2
+wait 1
+p2interact
+wait 4
+killbosses
+wait 3
+killbosses
+wait 3
+toportal p2 far
+wait 1
+toportal p2
+wait 1
+p2interact
+wait 14
+stagestate
+downstate
+clear
+clearloot
+wait 2
+# ---- stage 2: P1 back? P1's damage while P2 is alive
+p1cols stage 2
+health stage 2 start
+trackp1 9
+spawn p1 Skeleton 1 1.5
+wait 0.8
+health stage 2, P2 alive, 0.8 s of a skeleton
+clear
+wait 1
+# ---- P2 goes down, then P1's damage
+kill p2
+wait 2
+downstate
+p1cols P2 down
+health P2 down
+spawn p1 Skeleton 1 1.5
+wait 0.8
+health P2 down, 0.8 s of a skeleton
+touching p1
+wait 1.5
+health P2 down, 2.3 s
+shot down_portal_p2down
+quit

@@ -45,6 +45,7 @@ Playing
 - Each player picks a character; player 2 starts on player 1's pick.
 - Pause menu > CAMERA: SPLIT (always two views) or DYNAMIC (one view while you're close together). Remembered.
 - A downed player can be revived: stand at their gravestone until the ring fills.
+- Player 2 stuck? Pause menu > PLAYER 2: GIVE UP (next to RESTART, press twice) puts player 2 down for a revive.
 
 
 If something's wrong

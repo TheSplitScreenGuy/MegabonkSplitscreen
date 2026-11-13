@@ -1,0 +1,51 @@
+chars Monke Fox
+# User: a pause menu option to force-kill P2 (escape hatch). The pause menu's new 'PLAYER 2: GIVE UP' button: one
+# press arms it (label changes, P2 still up), a second press downs P2 (gravestone) and resumes the game; then P1
+# revives P2 at the gravestone as usual. Screenshots of the menu, the armed label and the result.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 60
+wait 1
+pausemenu on
+wait 1
+shot giveup_menu
+# controller path: Restart -> right = the give-up button, left = back to Restart; the column still reaches Exit
+uiselect B_Restart
+uinav right
+uinav left
+uinav down
+uinav up
+uinav right
+uiclick
+wait 0.3
+uiselect MegabonkSplitscreen_P2GiveUp
+shot giveup_armed
+downstate
+uiclick
+wait 1.5
+menustate
+downstate
+shot giveup_done
+# the button while P2 is down
+pausemenu on
+wait 1
+uiselect MegabonkSplitscreen_P2GiveUp
+uiclick
+wait 0.3
+downstate
+pausemenu off
+wait 1
+# P1 revives P2
+tograve p1
+wait 0.5
+go p1 grave
+waitrevive p2
+stop p1
+wait 2
+downstate
+quit

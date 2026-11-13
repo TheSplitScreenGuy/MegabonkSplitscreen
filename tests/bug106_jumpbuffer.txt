@@ -1,0 +1,63 @@
+chars Monke Monke
+# P2's extra jumps "don't feel right": P1's PlayerInput buffers a jump press for jumpBufferTicks physics steps (a press
+# during the short cooldown after a jump still jumps); P2's press was a single step. P2 with Feathers x2 (2 extra
+# jumps) taps quickly - 2 taps 0.2 s apart, 2 taps 0.3 s apart, 3 taps 0.25 s apart - with the buffer off, then on.
+# Rerun with natural spawns off and enemies cleared before each phase (the first run: P2 got stuck on a skeleton's head).
+# 'jumps' counts upward kicks (each landing counts as one too).
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+nospawns on
+home 300
+item p2 Feathers 2
+wait 3
+fix jumpbuffer off
+clear
+jumps p2 5 OFF 2 taps 0.2 s
+jump p2
+wait 0.25
+jump p2
+wait 5.5
+clear
+jumps p2 5 OFF 2 taps 0.3 s
+jump p2
+wait 0.3
+jump p2
+wait 5.5
+clear
+jumps p2 6 OFF 3 taps 0.25 s
+jump p2
+wait 0.25
+jump p2
+wait 0.25
+jump p2
+wait 6.5
+fix jumpbuffer on
+clear
+jumps p2 5 ON 2 taps 0.2 s
+jump p2
+wait 0.25
+jump p2
+wait 5.5
+clear
+jumps p2 5 ON 2 taps 0.3 s
+jump p2
+wait 0.3
+jump p2
+wait 5.5
+clear
+jumps p2 6 ON 3 taps 0.25 s
+jump p2
+wait 0.25
+jump p2
+wait 0.25
+jump p2
+wait 6.5
+enemycount
+quit
+
+

@@ -1,0 +1,64 @@
+chars Monke Monke
+# P2's jumps were much weaker than P1's in bug106_extrajumps (one tap 5.7 vs 9.8 m; three taps 17 vs 55 m). User's
+# suspicion: the 1.0.5 float/levitation fixes. P2 with the "jump held" fix ('hold': the game's jump-held questions
+# answered with P2's A during P2's step) off, then on. P1 baselines: the test's plain tap, and taps where the game
+# also reads the real button as held (p1hold) for 0.15 s and 0.6 s. Feathers x2 (ExtraJumps 2) on both.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 300
+item p1 Feathers 2
+item p2 Feathers 2
+wait 3
+# ---- P1 baselines
+jumps p1 6 P1 plain tap
+jump p1
+wait 6.5
+jumps p1 6 P1 tap held 0.15 s
+p1hold 0.15
+wait 6.5
+jumps p1 6 P1 tap held 0.6 s
+p1hold 0.6
+wait 6.5
+jumps p1 7 P1 three taps
+jump p1
+wait 0.4
+jump p1
+wait 0.4
+jump p1
+wait 7.5
+# ---- P2, jump-held fix OFF (before 1.0.5)
+fix hold off
+jumps p2 6 P2 hold-fix OFF tap
+jump p2
+wait 6.5
+jumps p2 6 P2 hold-fix OFF A held 0.6 s
+hold p2 0.6
+wait 6.5
+jumps p2 7 P2 hold-fix OFF three taps
+jump p2
+wait 0.4
+jump p2
+wait 0.4
+jump p2
+wait 7.5
+# ---- P2, jump-held fix ON (1.0.5)
+fix hold on
+jumps p2 6 P2 hold-fix ON tap
+jump p2
+wait 6.5
+jumps p2 6 P2 hold-fix ON A held 0.6 s
+hold p2 0.6
+wait 6.5
+jumps p2 7 P2 hold-fix ON three taps
+jump p2
+wait 0.4
+jump p2
+wait 0.4
+jump p2
+wait 7.5
+quit

@@ -1,0 +1,57 @@
+chars Monke Monke
+# User: does an air jump cancel the falling momentum (reset the vertical speed) or add to it - P1 vs P2? Feathers x2
+# (2 extra jumps) on both, natural spawns off, ~300 m apart, one player at a time. Jump, then a second jump while
+# falling (1.3 s later), and as a comparison while still rising (0.3 s later). 'jumps' logs each kick's vertical speed
+# just before -> just after (the landing shows as a kick too).
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+nospawns on
+home 300
+item p1 Feathers 2
+item p2 Feathers 2
+wait 3
+# ---- second jump while falling
+clear
+jumps p1 6 P1 air jump while falling
+jump p1
+wait 1.3
+jump p1
+wait 6.5
+clear
+jumps p2 6 P2 air jump while falling
+jump p2
+wait 1.3
+jump p2
+wait 6.5
+# ---- second jump while rising
+clear
+jumps p1 6 P1 air jump while rising
+jump p1
+wait 0.3
+jump p1
+wait 6.5
+clear
+jumps p2 6 P2 air jump while rising
+jump p2
+wait 0.3
+jump p2
+wait 6.5
+# ---- falling longer (2 s) before the air jump
+clear
+jumps p1 7 P1 air jump after 2 s
+jump p1
+wait 2
+jump p1
+wait 7.5
+clear
+jumps p2 7 P2 air jump after 2 s
+jump p2
+wait 2
+jump p2
+wait 7.5
+quit

@@ -1,0 +1,72 @@
+chars Monke Fox tier 3 map Desert
+# Player report (1.0.5): "on desert tier 3, the second map, when p1 died for the first time, p2 could not take any
+# damage" (and earlier: P2 no damage in Forest stage 2). Stage 1: P2 summons the boss, kills it, takes the portal.
+# Stage 2: P2 on normal health, skeletons right on P2 - while P1 is alive, then after P1 goes down (first death).
+# P2's HP before/after each, the down state. Tier 3 on the test save is set by the run config (no unlock needed).
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+stagestate
+toportal p2
+wait 1
+p2interact
+wait 4
+killbosses
+wait 3
+killbosses
+wait 3
+toportal p2 far
+wait 1
+toportal p2
+wait 1
+p2interact
+wait 14
+stagestate
+clear
+clearloot
+home 60
+wait 2
+# ---- stage 2, P1 alive (one skeleton: four killed P2 in 1.5 s here; a tier 3 skeleton hits for 67 - P2 gets Health tomes)
+tome p2 Health 15
+wait 1
+godp2 off
+health s2 start
+spawn p2 Skeleton 1 1.5
+wait 0.7
+health s2 0.7 s, P1 alive
+wait 0.8
+health s2 1.5 s, P1 alive
+clear
+godp2
+wait 2
+# ---- P1 goes down (first death), P2 healed (test health on -> off)
+kill p1
+wait 2
+downstate
+godp2 off
+health P1 down
+spawn p2 Skeleton 2 1.5
+wait 0.7
+health s2 0.7 s, P1 down
+wait 0.8
+health s2 1.5 s, P1 down
+touching p2
+wait 2
+health s2 3.5 s, P1 down
+touching p2
+shot p1down_p2hits
+wait 3
+health s2 6.5 s, P1 down
+wait 4
+health s2 10.5 s, P1 down
+revive p1
+wait 2
+health P1 revived
+wait 3
+health 3 s after P1 revived
+clear
+quit

@@ -46,7 +46,7 @@ internal static class P2Health
     public static bool TargetsP2(Enemy e) => e != null && rb != null && !IsDead && e.target != null && e.target.Pointer == rb.Pointer;
 
     // New run (character select closed): full health next time P2 spawns
-    public static void ResetForNewRun() => runStarted = false;
+    public static void ResetForNewRun() { runStarted = false; noDmgLogs = 0; }
 
     public static bool ReviveOnStart;
 
@@ -176,6 +176,7 @@ internal static class P2Health
             RetargetAll(toP1Only: IsDead);
         }
         if (!IsDead) CheckContacts(now);
+        WatchNoDamage(now);
     }
 
     // TEMP: each link from P2's stat to P2's health numbers, logged when something changes: P2's table (mod) / the
@@ -200,6 +201,7 @@ internal static class P2Health
     // TEST (user): F2 toggles 1,000,000 health for P1. The game recomputes P1's max HP from P1's stats now and then,
     // so it's held every frame while on; off = the game's own max again (HP capped to it).
     private static bool p1TestHealth;
+    public static bool P1TestHealthOn => p1TestHealth;
     public static void SetP2TestHealth(bool on)   // autotest: like F1
     {
         if (testHealth != on) ToggleTestHealth();
@@ -271,6 +273,7 @@ internal static class P2Health
     }
 
     // A hit through the game's code; false = not handled (then the mod's own rules apply)
+    private static int hit0Logs;
     private static bool GameHit(string source, Action<Assets.Scripts.Inventory__Items__Pickups.PlayerHealth> call)
     {
         if (!P2GameHealth.On || IsDead || body == null) return false;
@@ -278,6 +281,10 @@ internal static class P2Health
         float sh0 = Shield;
         if (!P2GameHealth.Borrow(source, call)) return false;
         AfterGameHealth(source, hp0, sh0);
+        // TEMP [hit0] (player: "when p1 died for the first time, p2 could not take any damage"): a game hit that took nothing
+        if (Hp == hp0 && Shield >= sh0 && hit0Logs++ < 25)
+            ModLog.Info($"[hit0] {source}: no HP lost ({Hp}/{MaxHp}, shield {Shield:F0}); P1 down {Downed.P1Down}, P1 hp {P1Health()?.hp}; " +
+                        $"P2 damageCooldown {P2GameHealth.Get<float>("damageCooldown"):F2}, game time {Time.time:F2}, evasion {P2Inventory.Get(Assets.Scripts.Menu.Shop.EStat.Evasion):F2}");
         return true;
     }
 
@@ -407,6 +414,37 @@ internal static class P2Health
 
     // ---------- Damage ----------
 
+    // TEMP [down] P2 damage watch (1.0.5 player report: "after p1 died for the first time, p2 could not take damage" -
+    // desert tier 3, stage 2; not reproduced in autotests): an enemy on P2 for 2 s while P2 loses no HP logs everything
+    // that decides P2's contact damage. Kept in players' logs ([down]), at most 6 a run.
+    private static float noDmgNext, noDmgSince = -1f;
+    private static int noDmgHp, noDmgLogs;
+    private static string lastContactSkip = "-";
+    private static void WatchNoDamage(float now)
+    {
+        if (noDmgLogs >= 6 || now < noDmgNext || body == null || IsDead || cc == null) return;
+        noDmgNext = now + 0.25f;
+        var em = EnemyManager.Instance;
+        if (em?.collidersToEnemies == null) return;
+        var t = body.transform;
+        Vector3 c = t.TransformPoint(cc.center);
+        string enemy = null;
+        foreach (var col in Physics.OverlapCapsule(c - Vector3.up * 1.2f, c + Vector3.up * 1.2f, cc.radius * t.lossyScale.x + 0.6f, ~0, QueryTriggerInteraction.Ignore))
+            if (col != null && em.collidersToEnemies.ContainsKey(col)) { var e = em.collidersToEnemies[col]; if (e != null && e.hp > 0f) { enemy = e.enemyData?.enemyName.ToString() ?? col.name; break; } }
+        int hpNow = Hp + Mathf.RoundToInt(Shield);
+        if (enemy == null) { noDmgSince = -1f; return; }
+        if (noDmgSince < 0f || hpNow < noDmgHp) { noDmgSince = now; noDmgHp = hpNow; return; }
+        if (now - noDmgSince < 2f) return;
+        noDmgSince = -1f;
+        noDmgLogs++;
+        bool frozen = false;
+        try { frozen = GameManager.Instance != null && GameManager.Instance.IsTimeFreeze(); } catch { }
+        ModLog.Warn($"[down] P2 touched by {enemy} for 2 s without losing HP: hp {Hp}/{MaxHp}, shield {Shield:F0}, test health {testHealth}, game health {P2GameHealth.On}, " +
+                    $"damage cooldown {P2GameHealth.Get<float>("damageCooldown"):F2} (game time {Time.time:F1}), evasion {P2Inventory.Get(EStat.Evasion):F2}, armor {P2Inventory.Get(EStat.Armor):F2}; " +
+                    $"time freeze {frozen}, paused {Assets.Scripts.Utility.MyTime.paused}, enemy layer mask {enemyLayerMask}, enemy cooldowns {enemyReadyAt.Count}, last contact check: {lastContactSkip}; " +
+                    $"P1 down {Downed.P1Down}, P1 hp {P1Health()?.hp}; P2 effects {P2PowerUps.DescribeStatus()}");
+    }
+
     // TEMP autotest switch ('fix timefreeze off')
     public static bool TimeFreezeFix = true;
     private static int freezeLogs;
@@ -421,6 +459,7 @@ internal static class P2Health
         if (frozen && TimeFreezeFix)
         {
             if (freezeLogs++ < 3) ModLog.Info("[freeze] time freeze on: no enemy touches for P2");
+            lastContactSkip = "time freeze";
             return;
         }
         var t = body.transform;
@@ -434,13 +473,17 @@ internal static class P2Health
         float cooldown = MyPlayer.Instance != null && MyPlayer.Instance.enemyAttackCooldown > 0f
             ? MyPlayer.Instance.enemyAttackCooldown : FallbackEnemyCooldown;
 
+        int found = 0;
+        lastContactSkip = "no enemy in P2's capsule";
         foreach (var col in Physics.OverlapCapsule(bottom, top, r, enemyLayerMask))
         {
             if (col == null || !em.collidersToEnemies.ContainsKey(col)) continue;
             var e = em.collidersToEnemies[col];
             if (e == null || e.enemyData == null || e.hp <= 0f) continue;
-            if (enemyReadyAt.TryGetValue(e.Pointer, out float ready) && now < ready) continue;
+            found++;
+            if (enemyReadyAt.TryGetValue(e.Pointer, out float ready) && now < ready) { lastContactSkip = $"enemy on cooldown ({ready - now:F2} s left, {found} in capsule)"; continue; }
             enemyReadyAt[e.Pointer] = now + cooldown;
+            lastContactSkip = $"hit sent ({e.enemyData.enemyName}, game health {P2GameHealth.On})";
             // The game's own enemy hit (armor, evasion, shield, thorns, damage cooldown, knockback), else the mod's
             var enemy = e;
             Vector3 dir = body.transform.position - e.transform.position;

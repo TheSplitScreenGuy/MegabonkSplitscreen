@@ -490,6 +490,7 @@ internal static class P2Movement
         if (TestP1JumpHeld && !InP2Step && action == MyInputManager.Jump) { __result = true; return false; }
         if (!InP2Step || action == null) return true;
         if (action != MyInputManager.Jump && action != MyInputManager.JumpBhop) return true;
+        // (Jump Bhop too: bug106_extrajumps - P1 itself bunny-hops while holding jump, so "A held" is right for P2)
         __result = aHeld;
         return false;
     }

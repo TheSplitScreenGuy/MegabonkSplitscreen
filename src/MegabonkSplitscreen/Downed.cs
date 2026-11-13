@@ -108,6 +108,9 @@ internal static class Downed
             SetP1Gear(true);
             Gravestones.Remove(0, burst: true);
             ModLog.Info($"[down] P1 revived with {ph?.hp}/{ph?.maxHp} HP");
+            watchP1Until = Time.time + 60f;
+            stateLoggedAt5 = false;
+            touchedSince = -1f;
         }
         else { P2Health.Revive(); Gravestones.Remove(1, burst: true); }
     }
@@ -134,6 +137,45 @@ internal static class Downed
         MegabonkSplitscreen.Revive.Reset();
         ReviveUi.Reset();
         if (P1Down) { allowGameOver = false; Revive(0); ModLog.Info("[down] door: P1 revived"); }
+    }
+
+    // TEMP [down] P1 watch (1.0.5 player report: after P1's first death and revive - desert tier 3 - P1 took no damage;
+    // not reproduced in 3 autotest routes): for 60 s after a revive, P1's damage state is logged 5 s in, and once more if
+    // an enemy touches P1 for 2 s without P1 losing HP. Kept in players' logs ([down]).
+    private static float watchP1Until = -1f, touchedSince = -1f, nextWatch;
+    private static int touchedHpSum;
+    private static bool stateLoggedAt5;
+    private static int watchLogs;
+    public static void WatchP1()
+    {
+        if (watchP1Until < 0f || P1Down || Time.time > watchP1Until || Time.time < nextWatch || watchLogs >= 6) return;
+        nextWatch = Time.time + 0.25f;
+        var p1 = MyPlayer.Instance;
+        var ph = p1?.inventory?.playerHealth;
+        if (p1 == null || ph == null) return;
+        if (!stateLoggedAt5 && Time.time > watchP1Until - 55f) { stateLoggedAt5 = true; watchLogs++; ModLog.Info($"[down] P1 5 s after the revive: {P1DamageState(p1, ph)}"); }
+        var em = Assets.Scripts.Managers.EnemyManager.Instance;
+        string enemy = null;
+        Vector3 c0 = p1.transform.position;
+        foreach (var col in Physics.OverlapCapsule(c0 - Vector3.up * 1.5f, c0 + Vector3.up * 2f, 1.3f, ~0, QueryTriggerInteraction.Ignore))
+            if (col != null && em?.collidersToEnemies != null && em.collidersToEnemies.ContainsKey(col)) { enemy = em.collidersToEnemies[col]?.enemyData?.enemyName.ToString() ?? col.name; break; }
+        int hpNow = ph.hp + Mathf.RoundToInt(ph.shield);
+        if (enemy == null) { touchedSince = -1f; return; }
+        if (touchedSince < 0f || hpNow < touchedHpSum) { touchedSince = Time.time; touchedHpSum = hpNow; return; }
+        if (Time.time - touchedSince < 2f) return;
+        watchLogs++;
+        touchedSince = -1f;
+        ModLog.Warn($"[down] P1 touched by {enemy} for 2 s after the revive without losing HP: {P1DamageState(p1, ph)}");
+    }
+
+    private static string P1DamageState(MyPlayer p1, Assets.Scripts.Inventory__Items__Pickups.PlayerHealth ph)
+    {
+        string can = "?";
+        try { can = $"MyPlayer.CanTakeDamage {p1.CanTakeDamage()}, PlayerHealth.CanTakeDamage {ph.CanTakeDamage()}, IsDead {ph.IsDead()}"; } catch (Exception e) { can = e.Message; }
+        var rb = p1.playerMovement?.rb;
+        var cols = p1.GetComponentsInChildren<Collider>(true).Select(c => $"'{c.name}' {(c.enabled ? "on" : "OFF")}{(c.isTrigger ? " trigger" : "")}");
+        return $"hp {ph.hp}/{ph.maxHp}, shield {ph.shield:F0}, damage cooldown {ph.damageCooldown:F2}; {can}; rb kinematic {rb?.isKinematic}, collisions {rb?.detectCollisions}; " +
+               $"colliders {string.Join(", ", cols)}; P1 test health {P2Health.P1TestHealthOn}; time scale {Time.timeScale:F2}";
     }
 
     // Each physics step and frame while P1 is down: P1 stays where P1 went down

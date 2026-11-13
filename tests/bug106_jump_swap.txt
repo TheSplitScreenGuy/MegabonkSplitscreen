@@ -1,0 +1,34 @@
+chars Monke Monke
+# P2's ground jump took off at 17.2 m/s vs P1's 23.0 (Feathers x2 on both, same jump force and mass). Terrain or P2?
+# Each player jumps from its own spot, then the players swap spots and jump again. 'jumps' logs each kick
+# (vertical speed before -> after); the [jump] tick traces are in the mod log.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+nospawns on
+home 300
+item p1 Feathers 2
+item p2 Feathers 2
+wait 3
+clear
+jumps p1 5 P1 at spot A
+jump p1
+wait 5.5
+jumps p2 5 P2 at spot B
+jump p2
+wait 5.5
+swap
+wait 3
+clear
+jumps p1 5 P1 at spot B
+jump p1
+wait 5.5
+jumps p2 5 P2 at spot A
+jump p2
+wait 5.5
+# no items: both base jumps at spot A/B again
+quit

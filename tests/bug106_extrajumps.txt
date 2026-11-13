@@ -1,0 +1,65 @@
+chars Monke Monke
+# User: P2's extra jumps don't feel right since the float/levitation fixes. Suspect: P2's movement code answers the
+# game's Jump Bhop question (hold to bunny-hop on landing) with P2's A; on pads Jump Bhop is unbound, so P1's answer is
+# always no. Both players get extra jumps (Feathers x2 = ExtraJumps 2), then the same inputs one at a time (the other
+# stands still), ~300 m apart: one tap, three taps 0.4 s apart, a 2.5 s hold through the landing. 'jumps' counts
+# upward kicks. P2 with the bhop change off (1.0.5), then on.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 300
+item p1 Feathers 2
+item p2 Feathers 2
+wait 1
+stat p1 ExtraJumps
+stat p2 ExtraJumps
+wait 2
+# ---- P1
+jumps p1 6 P1 one tap
+jump p1
+wait 6.5
+jumps p1 7 P1 three taps
+jump p1
+wait 0.4
+jump p1
+wait 0.4
+jump p1
+wait 7.5
+jumps p1 8 P1 hold 2.5 s
+p1hold 2.5
+wait 8.5
+# ---- P2, bhop change off (1.0.5)
+fix bhop off
+jumps p2 6 P2 OFF one tap
+jump p2
+wait 6.5
+jumps p2 7 P2 OFF three taps
+jump p2
+wait 0.4
+jump p2
+wait 0.4
+jump p2
+wait 7.5
+jumps p2 8 P2 OFF hold 2.5 s
+hold p2 2.5
+wait 8.5
+# ---- P2, bhop change on
+fix bhop on
+jumps p2 6 P2 ON one tap
+jump p2
+wait 6.5
+jumps p2 7 P2 ON three taps
+jump p2
+wait 0.4
+jump p2
+wait 0.4
+jump p2
+wait 7.5
+jumps p2 8 P2 ON hold 2.5 s
+hold p2 2.5
+wait 8.5
+quit

@@ -238,6 +238,57 @@ internal static partial class Autotest
                     Report($"fog {string.Join(" ", a.Skip(1))}: revealed cells {m?.revealedIndices?.Count ?? -1}, visited {vis}, reveal radius {m?.revealRadius:F0}; P1 at {PlayerPos(0)}, P2 at {PlayerPos(1)}");
                 });
                 return true;
+            case "p1cols":   // p1cols [label]: P1's colliders (on/off, trigger, layer), rigidbody state, the game's damage checks
+                Cheat(() =>
+                {
+                    var p1 = MyPlayer.Instance;
+                    if (p1 == null) { Report("p1cols: no P1"); return; }
+                    var cols = p1.GetComponentsInChildren<Collider>(true).Select(c => $"'{c.name}' {(c.enabled ? "on" : "OFF")}{(c.isTrigger ? " trigger" : "")} {LayerMask.LayerToName(c.gameObject.layer)}");
+                    var rb = p1.playerMovement?.rb;
+                    var ph = p1.inventory?.playerHealth;
+                    string can = "?";
+                    try { can = $"MyPlayer.CanTakeDamage {p1.CanTakeDamage()}, PlayerHealth.CanTakeDamage {ph?.CanTakeDamage()}, IsDead {ph?.IsDead()}"; } catch (Exception e) { can = e.Message; }
+                    Report($"p1cols {string.Join(" ", a.Skip(1))}: rb kinematic {rb?.isKinematic}, detect collisions {rb?.detectCollisions}; {can}; layer {LayerMask.LayerToName(p1.gameObject.layer)}; colliders: {string.Join(", ", cols)}");
+                });
+                return true;
+            case "uiselect":   // uiselect <object name>: the game's UI selection onto that (active) object, then 'uiclick' presses it
+                Cheat(() =>
+                {
+                    string n = a.Length > 1 ? a[1] : "";
+                    var go = Object.FindObjectsOfType<UnityEngine.UI.Selectable>().Select(s => s.gameObject).FirstOrDefault(g => g != null && g.name == n && g.activeInHierarchy);
+                    if (go == null) { Report($"uiselect: no active '{n}'"); return; }
+                    UnityEngine.EventSystems.EventSystem.current?.SetSelectedGameObject(go);
+                    var label = go.GetComponentInChildren<TMPro.TextMeshProUGUI>(true);
+                    Report($"uiselect: '{n}' selected (label '{label?.text}')");
+                });
+                return true;
+            case "jumpforce":   // jumpforce [label]: the game's GetJumpForce for P1, for P2's copy in P2's stats, and for P2's copy outside them
+                Cheat(() =>
+                {
+                    float f1 = MyPlayer.Instance?.playerMovement?.GetJumpForce() ?? -1f;
+                    var pm = P2Movement.Pm;
+                    float f2out = pm != null ? pm.GetJumpForce() : -1f, f2in = -1f;
+                    bool entered = P2Inventory.EnterP2();
+                    try { f2in = pm != null ? pm.GetJumpForce() : -1f; } finally { if (entered) P2Inventory.Exit(); }
+                    Report($"jumpforce {string.Join(" ", a.Skip(1))}: P1 {f1:F2}; P2 in P2's stats {f2in:F2} (entered {entered}), P2 outside {f2out:F2}; JumpHeight P1 {MyPlayer.Instance?.inventory?.playerStats?.GetStat(Assets.Scripts.Menu.Shop.EStat.JumpHeight):F2} / P2 {P2Inventory.Get(Assets.Scripts.Menu.Shop.EStat.JumpHeight):F2}");
+                });
+                return true;
+            case "p1tap":   // p1tap: P1's jump pressed once (one input step), held 0.15 s - a real tap
+                P1Hold(0.15f);
+                Report("P1 taps jump");
+                return true;
+            case "p1hold":   // p1hold <secs>: P1 presses jump once and holds it (holdingJump + the real button as the game reads it)
+                P1Hold(Float(a, 1, 1f));
+                Report($"P1 presses and holds jump for {Float(a, 1, 1f):F1} s");
+                return true;
+            case "jumps":   // jumps <p> <secs>: count that player's jumps (an upward kick of 4+ m/s in one physics step) and the top height
+                {
+                    float secs = Float(a, 2, 3f);
+                    jumpWatch[pi] = (Time.unscaledTime + secs, 0, PlayerPos(pi).y, PlayerPos(pi).y, float.NaN, string.Join(" ", a.Skip(3)));
+                    kicks[pi].Clear();
+                    Report($"counting P{pi + 1}'s jumps for {secs:F1} s");
+                }
+                return true;
             case "p2pos":
                 Cheat(() =>
                 {
@@ -258,6 +309,7 @@ internal static partial class Autotest
     private static void BugWatchers()
     {
         if (phase != "script") return;
+        JumpWatchers();
         if (goldWatch)
         {
             var inv = MyPlayer.Instance?.inventory;
@@ -285,6 +337,36 @@ internal static partial class Autotest
             watchY[i] = w;
         }
         if (execOn || forcedChance >= 0f) SampleDexecutioners();
+    }
+
+    // 'jumps': sampled per frame (a jump's kick is far bigger than a frame's change from gravity)
+    private static readonly (float until, int count, float startY, float maxY, float lastVy, string label)[] jumpWatch = new (float, int, float, float, float, string)[2];
+    private static readonly List<string>[] kicks = { new(), new() };   // each kick: vertical speed before -> after, time
+    private static void JumpWatchers()
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            var w = jumpWatch[i];
+            if (w.until <= 0f) continue;
+            Rigidbody rb = i == 0 ? MyPlayer.Instance?.playerMovement?.rb : P2Movement.Pm?.rb;
+            if (rb == null) continue;
+            float vy = rb.velocity.y, y = PlayerPos(i).y;
+            if (!float.IsNaN(w.lastVy) && vy - w.lastVy >= 4f)
+            {
+                w.count++;
+                if (kicks[i].Count < 8) kicks[i].Add($"{w.lastVy:F1} -> {vy:F1} m/s at y +{y - w.startY:F1}");
+            }
+            w.lastVy = vy;
+            if (y > w.maxY) w.maxY = y;
+            if (Time.unscaledTime >= w.until)
+            {
+                var pm = i == 0 ? MyPlayer.Instance?.playerMovement : P2Movement.Pm;
+                Report($"jumps P{i + 1} {w.label}: {w.count} jump(s), top {w.maxY - w.startY:F2} m above the start; usedJumps {pm?.usedJumps}, aerialJumps {pm?.aerialJumps}, grounded {pm?.grounded}; kicks [{string.Join(" | ", kicks[i])}]");
+                kicks[i].Clear();
+                w.until = 0f;
+            }
+            jumpWatch[i] = w;
+        }
     }
 
     // ---------- Executions ----------

@@ -665,7 +665,15 @@ internal static class P2Select
                 string axis = (ap.elementIdentifierName ?? "").ToLowerInvariant();
                 if (seenInputs.Add("axis:" + axis + ":" + ap.axisPole))
                     ModLog.Info($"P2 pad axis seen: '{ap.elementIdentifierName}' {ap.axisPole}");
-                dir = DirFromAxis(axis, ap.axisPole);
+                // v1.0.6 (user: back at character select after a run, P2's cursor went left by itself into the skin row,
+                // "like stick drift"): polling can report an axis that isn't pushed (seen before with released triggers).
+                // The stick must really be pushed at least half-way (the direction stays polling's: the user's pad read
+                // Y with the opposite sign to polling's pole, and the first version of this check dropped every up/down)
+                float v = joy.GetAxisById(ap.elementIdentifierId);
+                bool pushed = Mathf.Abs(v) >= StickPush;
+                if (pushed) dir = DirFromAxis(axis, ap.axisPole);
+                else if (axis.Contains("left stick") && staleAxisLogs++ < 5)
+                    ModLog.Info($"[pads] P2's character select: polling said '{ap.elementIdentifierName}' {ap.axisPole}, the stick reads {v:F2} - ignored");
             }
         }
 
@@ -686,6 +694,9 @@ internal static class P2Select
             Move(dir);
         }
     }
+
+    private const float StickPush = 0.5f;
+    private static int staleAxisLogs;
 
     // D-pad buttons, e.g. "D-Pad Up"
     private static Vector2Int DirFromName(string n)

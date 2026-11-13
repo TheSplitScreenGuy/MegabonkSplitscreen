@@ -1,0 +1,41 @@
+chars Monke Fox
+# Player report (1.0.5, clarified): after P1 died for the first time (desert tier 3, stage 2, fighting ghosts), P1
+# didn't take damage any more. P1 goes down, P2 revives P1 at the gravestone (the real revive: countdown, portal, rise),
+# then skeletons and ghosts go at P1 (normal health). P1's HP, what touches P1, P1's colliders.
+wait 2
+godp2
+open
+clear
+clearloot
+nopowerups
+home 60
+wait 1
+p1cols before
+kill p1
+wait 2
+downstate
+tograve p2
+wait 0.5
+go p2 grave
+waitrevive p1
+stop p2
+wait 2
+downstate
+p1cols after revive
+health after revive
+spawn p1 Skeleton 2 1.5
+wait 1
+health skeletons 1 s
+touching p1
+wait 1.5
+health skeletons 2.5 s
+clear
+wait 1
+spawn p1 Ghost 3 1.5
+wait 1.5
+health ghosts 1.5 s
+touching p1
+wait 2
+health ghosts 3.5 s
+clear
+quit

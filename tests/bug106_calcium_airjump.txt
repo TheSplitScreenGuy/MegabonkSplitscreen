@@ -1,0 +1,231 @@
+chars Calcium Calcium
+# User (playing Calcium): an air jump sometimes didn't cancel the falling momentum - "only jumped a tiny bit" - while
+# moving in a direction. Both Calcium with Feathers x2 (extra jumps), natural spawns off, ~300 m apart, one player at a
+# time running straight while jumping; the air jump 0.8 / 1.2 / 1.6 s after the ground jump, twice each. 'jumps' logs
+# each kick's vertical speed before -> after (a "tiny jump" = a small kick from a negative speed). Then the players
+# swap spots and repeat (the ground can change a jump).
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+nospawns on
+home 300
+item p1 Feathers 2
+item p2 Feathers 2
+wait 3
+stat p1 ExtraJumps
+stat p2 ExtraJumps
+home
+wait 1
+clear
+go p1 1 0
+wait 0.5
+jumps p1 5 P1 spot A run 1 air jump at 0.8 s
+jump p1
+wait 0.8
+jump p1
+wait 5
+stop p1
+wait 1
+home
+wait 1
+clear
+go p2 1 0
+wait 0.5
+jumps p2 5 P2 spot B run 1 air jump at 0.8 s
+jump p2
+wait 0.8
+jump p2
+wait 5
+stop p2
+wait 1
+home
+wait 1
+clear
+go p1 1 0
+wait 0.5
+jumps p1 5 P1 spot A run 1 air jump at 1.2 s
+jump p1
+wait 1.2
+jump p1
+wait 5
+stop p1
+wait 1
+home
+wait 1
+clear
+go p2 1 0
+wait 0.5
+jumps p2 5 P2 spot B run 1 air jump at 1.2 s
+jump p2
+wait 1.2
+jump p2
+wait 5
+stop p2
+wait 1
+home
+wait 1
+clear
+go p1 1 0
+wait 0.5
+jumps p1 5 P1 spot A run 1 air jump at 1.6 s
+jump p1
+wait 1.6
+jump p1
+wait 5
+stop p1
+wait 1
+home
+wait 1
+clear
+go p2 1 0
+wait 0.5
+jumps p2 5 P2 spot B run 1 air jump at 1.6 s
+jump p2
+wait 1.6
+jump p2
+wait 5
+stop p2
+wait 1
+home
+wait 1
+clear
+go p1 1 0
+wait 0.5
+jumps p1 5 P1 spot A run 2 air jump at 0.8 s
+jump p1
+wait 0.8
+jump p1
+wait 5
+stop p1
+wait 1
+home
+wait 1
+clear
+go p2 1 0
+wait 0.5
+jumps p2 5 P2 spot B run 2 air jump at 0.8 s
+jump p2
+wait 0.8
+jump p2
+wait 5
+stop p2
+wait 1
+home
+wait 1
+clear
+go p1 1 0
+wait 0.5
+jumps p1 5 P1 spot A run 2 air jump at 1.2 s
+jump p1
+wait 1.2
+jump p1
+wait 5
+stop p1
+wait 1
+home
+wait 1
+clear
+go p2 1 0
+wait 0.5
+jumps p2 5 P2 spot B run 2 air jump at 1.2 s
+jump p2
+wait 1.2
+jump p2
+wait 5
+stop p2
+wait 1
+home
+wait 1
+clear
+go p1 1 0
+wait 0.5
+jumps p1 5 P1 spot A run 2 air jump at 1.6 s
+jump p1
+wait 1.6
+jump p1
+wait 5
+stop p1
+wait 1
+home
+wait 1
+clear
+go p2 1 0
+wait 0.5
+jumps p2 5 P2 spot B run 2 air jump at 1.6 s
+jump p2
+wait 1.6
+jump p2
+wait 5
+stop p2
+wait 1
+home
+wait 1
+swap
+wait 3
+clear
+go p1 -1 0
+wait 0.5
+jumps p1 5 P1 spot B air jump at 0.8 s
+jump p1
+wait 0.8
+jump p1
+wait 5
+stop p1
+wait 1
+clear
+go p2 -1 0
+wait 0.5
+jumps p2 5 P2 spot A air jump at 0.8 s
+jump p2
+wait 0.8
+jump p2
+wait 5
+stop p2
+wait 1
+clear
+go p1 -1 0
+wait 0.5
+jumps p1 5 P1 spot B air jump at 1.2 s
+jump p1
+wait 1.2
+jump p1
+wait 5
+stop p1
+wait 1
+clear
+go p2 -1 0
+wait 0.5
+jumps p2 5 P2 spot A air jump at 1.2 s
+jump p2
+wait 1.2
+jump p2
+wait 5
+stop p2
+wait 1
+clear
+go p1 -1 0
+wait 0.5
+jumps p1 5 P1 spot B air jump at 1.6 s
+jump p1
+wait 1.6
+jump p1
+wait 5
+stop p1
+wait 1
+clear
+go p2 -1 0
+wait 0.5
+jumps p2 5 P2 spot A air jump at 1.6 s
+jump p2
+wait 1.6
+jump p2
+wait 5
+stop p2
+wait 1
+quit
+
+

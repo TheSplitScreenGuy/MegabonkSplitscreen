@@ -122,6 +122,7 @@ internal static class P2Body
         Guard("bossbars", BossBars.Update);
         Guard("interact", P2Interact.Update);
         Guard("doors", DoorTeleports.Update);
+        Guard("p1 watch", Downed.WatchP1);   // TEMP: P1's damage after a revive (1.0.5 report)
         Guard("explosions", P2Explosions.Update);
         Guard("rewards", P2Rewards.Update);
         Guard("fall", FallDamage.Update);

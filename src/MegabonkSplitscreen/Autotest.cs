@@ -743,10 +743,12 @@ internal static partial class Autotest
                             Report($"uiclick on '{sel.name}'");
                             return;
                         }
+                        string d = a.Length > 1 ? a[1] : "down";
                         var ev = new UnityEngine.EventSystems.AxisEventData(es)
                         {
-                            moveDir = a.Length > 1 && a[1] == "up" ? UnityEngine.EventSystems.MoveDirection.Up : UnityEngine.EventSystems.MoveDirection.Down,
-                            moveVector = a.Length > 1 && a[1] == "up" ? Vector2.up : Vector2.down
+                            moveDir = d == "up" ? UnityEngine.EventSystems.MoveDirection.Up : d == "left" ? UnityEngine.EventSystems.MoveDirection.Left
+                                    : d == "right" ? UnityEngine.EventSystems.MoveDirection.Right : UnityEngine.EventSystems.MoveDirection.Down,
+                            moveVector = d == "up" ? Vector2.up : d == "left" ? Vector2.left : d == "right" ? Vector2.right : Vector2.down
                         };
                         UnityEngine.EventSystems.ExecuteEvents.Execute(sel, ev, UnityEngine.EventSystems.ExecuteEvents.moveHandler);
                         Report($"uinav {(a.Length > 1 ? a[1] : "down")}: '{sel.name}' -> '{es.currentSelectedGameObject?.name}'");
@@ -2106,10 +2108,18 @@ internal static partial class Autotest
         input.moveVertical = s.y;
         bool jump = Time.unscaledTime < pads[0].jumpUntil;
         input.jumping = jump;
-        input.holdingJump = jump;
+        // 'p1tap': the press sent once (the game consumes it), held 0.15 s - 'jump p1' re-sends it every step (extra jumps spent)
+        if (p1TapPending) { input.jumping = true; p1TapPending = false; }
+        // 'p1hold <secs>' (extra-jump test): one press, then held - like a pad (the old 'hold' pressed every tick)
+        bool held = Time.unscaledTime < p1HoldUntil;
+        input.holdingJump = jump || held;
+        if (p1HoldUntil > 0f) { P2Movement.TestP1JumpHeld = held; if (!held) p1HoldUntil = -1f; }
         input.sliding = Time.unscaledTime < p1SlideUntil;   // "p1slide <secs>" (1.0 alpha: slide test)
     }
     private static float p1SlideUntil = -1f;
+    private static float p1HoldUntil = -1f;
+    public static void P1Hold(float secs) { p1TapPending = true; p1HoldUntil = Time.unscaledTime + secs; }
+    private static bool p1TapPending;
 
     // ---------- Helpers ----------
 

@@ -1,0 +1,54 @@
+chars Monke Monke
+# Extra jumps, fair baseline: P1's jump pressed once per tap ('p1tap'; 'jump p1' re-sent the press every step and
+# likely spent extra jumps inside one tap: 9.8 m vs P2's 5.7 m). Without extra jumps first, then Feathers x2.
+# P1 and P2 one at a time, ~300 m apart: one tap, three taps 0.4 s apart. Jump height stat of both.
+wait 2
+godp1
+godp2
+open
+clear
+clearloot
+nopowerups
+home 300
+wait 3
+stat p1 JumpHeight
+stat p2 JumpHeight
+# ---- no extra jumps
+jumps p1 5 P1 tap, no extra jumps
+p1tap
+wait 5.5
+jumps p2 5 P2 tap, no extra jumps
+jump p2
+wait 5.5
+jumps p1 5 P1 old tap ('jump p1'), no extra jumps
+jump p1
+wait 5.5
+# ---- Feathers x2
+item p1 Feathers 2
+item p2 Feathers 2
+wait 1
+stat p1 ExtraJumps
+stat p2 ExtraJumps
+stat p1 JumpHeight
+stat p2 JumpHeight
+jumps p1 6 P1 tap
+p1tap
+wait 6.5
+jumps p2 6 P2 tap
+jump p2
+wait 6.5
+jumps p1 7 P1 three taps
+p1tap
+wait 0.4
+p1tap
+wait 0.4
+p1tap
+wait 7.5
+jumps p2 7 P2 three taps
+jump p2
+wait 0.4
+jump p2
+wait 0.4
+jump p2
+wait 7.5
+quit
